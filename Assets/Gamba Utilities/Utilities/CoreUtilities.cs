@@ -11,7 +11,7 @@ namespace GambaUtilities
     public static class CoreUtilities
     {
 
-        #region Collections
+        #region Lists
 
         #region Resize
 
@@ -182,14 +182,6 @@ namespace GambaUtilities
             }
 
             list.Clear();
-        }
-
-        public static void Clear<T>(this T[] array)
-        {
-            for (int i = 0; i < array.Length; i++)
-            {
-                array[i] = default;
-            }
         }
 
         #endregion

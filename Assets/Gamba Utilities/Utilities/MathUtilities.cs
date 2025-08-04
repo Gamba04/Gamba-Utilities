@@ -32,74 +32,38 @@ namespace GambaUtilities
         /// <summary> Rounds <paramref name="value"/> to the nearest integrer pointing away from zero. </summary>
         public static int RoundAwayFromZero(float value) => (int)Math.Round(value, MidpointRounding.AwayFromZero);
 
+        /// <summary> Converts from degrees to radians. </summary>
+        public static float ToRadians(this float angle) => angle * Mathf.Deg2Rad;
+
+        /// <summary> Converts from radians to degrees. </summary>
+        public static float ToDegrees(this float angle) => angle * Mathf.Rad2Deg;
+
         #endregion
 
         // ----------------------------------------------------------------------------------------------------
 
         #region Vectors
 
-        public static Vector3 GetScaleOf(float size) => new Vector3(size, size, 1);
+        public static Vector3 GetScale2D(float size) => new Vector3(size, size, 1);
 
+        /// <param name="angle"> Polar angle in radians. </param>
         public static Vector2 GetDirection(float angle) => new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
 
+        /// <summary> Returns the polar angle in radians. </summary>
         public static float GetAngle(this Vector2 point)
         {
-            const float pi = Mathf.PI;
+            float angle = Vector2.SignedAngle(Vector2.right, point);
 
-            float x = point.x;
-            float y = point.y;
+            if (angle < 0) angle += 360;
 
-            float r;
-
-            if (x > 0)
-            {
-                if (y > 0) // Cuadrant: 1
-                {
-                    r = Mathf.Atan(y / x);
-                }
-                else if (y < 0) // Cuadrant: 4
-                {
-                    r = pi * 3 / 2f + (pi * 3 / 2f - (pi - Mathf.Atan(y / x)));
-                }
-                else // Right
-                {
-                    r = 0;
-                }
-            }
-            else if (x < 0)
-            {
-                if (y > 0) // Cuadrant: 2
-                {
-                    r = pi * 1 / 2f + (pi * 1 / 2f + Mathf.Atan(y / x));
-
-                }
-                else if (y < 0) // Cuadrant: 3
-                {
-                    r = pi + Mathf.Atan(y / x);
-                }
-                else // Left
-                {
-                    r = pi;
-                }
-            }
-            else
-            {
-                if (y > 0) // Up
-                {
-                    r = pi * 1 / 2f;
-                }
-                else if (y < 0) // Down
-                {
-                    r = pi * 3 / 2f;
-                }
-                else // Zero
-                {
-                    r = 0;
-                }
-            }
-
-            return r;
+            return angle.ToRadians();
         }
+
+        /// <summary> Returns the vector component across a <paramref name="direction"/>'s axis. </summary>
+        public static Vector2 Component(this Vector2 vector, Vector2 direction) => direction * Vector2.Dot(vector, direction);
+
+        /// <summary> Returns the vector component across a <paramref name="direction"/>'s axis. </summary>
+        public static Vector3 Component(this Vector3 vector, Vector3 direction) => direction * Vector3.Dot(vector, direction);
 
         public static Vector2 Perpendicular(this Vector2 vector) => new Vector2(vector.y, -vector.x);
 
