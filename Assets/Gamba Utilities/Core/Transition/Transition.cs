@@ -1,5 +1,4 @@
 using System;
-using System.Reflection;
 using UnityEngine;
 using static UnityEngine.Time;
 
@@ -12,9 +11,9 @@ namespace GambaUtilities
     public class Transition<T>
         where T : struct
     {
-        public AnimationCurve curve = new AnimationCurve(new Keyframe(0, 0), new Keyframe(1, 1));
-        [Range(0, 10)]
+        [Range(0, 5)]
         public float duration = 1;
+        public AnimationCurve curve = new AnimationCurve(new Keyframe(0, 0), new Keyframe(1, 1));
 
         [HideInInspector]
         public T value;
@@ -55,14 +54,12 @@ namespace GambaUtilities
             targetValue = target;
             isInTransition = true;
 
-            if (duration > 0 && !CompareValue(target))
+            if (duration > 0 && !value.Equals(target))
             {
                 time = 1;
             }
             else Complete();
         }
-
-        private bool CompareValue(T target) => value.Equals(target);
 
         #endregion
 
@@ -84,7 +81,7 @@ namespace GambaUtilities
 
                     float interpolator = curve.Evaluate(Progress);
 
-                    Lerp(interpolator);
+                    updateValue = Lerp(interpolator);
                 }
                 else Complete();
             }
@@ -107,11 +104,10 @@ namespace GambaUtilities
 
         #region Interpolation
 
-        private delegate S LerpFunction<S>(S a, S b, float t) where S : struct;
+        private delegate S LerpFunction<S>(S a, S b, float t);
 
-        private void Lerp(float interpolator)
+        private bool Lerp(float interpolator)
         {
-            Type type = typeof(T);
             bool success = false;
 
             TryLerp<float>(Mathf.LerpUnclamped);
@@ -122,10 +118,11 @@ namespace GambaUtilities
             TryLerp<Color>(Color.LerpUnclamped);
             TryLerpTransitionable();
 
+            return success;
+
             void TryLerp<S>(LerpFunction<S> lerp)
-                where S : struct
             {
-                if (!success && type == typeof(S))
+                if (!success && typeof(S).IsAssignableFrom(typeof(T)))
                 {
                     S start = (S)(object)startValue;
                     S target = (S)(object)targetValue;
@@ -138,20 +135,11 @@ namespace GambaUtilities
 
             void TryLerpTransitionable()
             {
-                if (!success)
+                if (!success && default(T) is ITransitionable<T> transitionable)
                 {
-                    Type transitionableType = typeof(ITransitionable<>).MakeGenericType(type);
+                    value = transitionable.Lerp(startValue, targetValue, interpolator);
 
-                    if (transitionableType.IsAssignableFrom(type))
-                    {
-                        object start = Convert.ChangeType(startValue, transitionableType);
-                        object target = Convert.ChangeType(targetValue, transitionableType);
-
-                        MethodInfo lerp = transitionableType.GetMethods()[0];
-                        object[] arguments = { start, target, interpolator };
-
-                        value = (T)lerp.Invoke(default(T), arguments);
-                    }
+                    success = true;
                 }
             }
         }
@@ -184,8 +172,6 @@ namespace GambaUtilities
         /// <summary> Completes the transition in the target value and triggers the callback. </summary>
         public void Complete()
         {
-            if (CompareValue(targetValue)) return;
-
             value = targetValue;
 
             End();

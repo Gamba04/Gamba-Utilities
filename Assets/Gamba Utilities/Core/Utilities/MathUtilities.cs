@@ -93,14 +93,6 @@ namespace GambaUtilities
 
         public static Color WithAlpha(this Color color, float value) => new Color(color.r, color.g, color.b, value);
 
-        public static Color GetRandomColor(bool randomizeAlpha = false)
-        {
-            return new Color(GetValue(), GetValue(), GetValue(), randomizeAlpha ? GetValue() : 1);
-
-            static float GetValue() => UnityEngine.Random.value;
-        }
-
-        /// <summary> Linearly interpolates between colors <paramref name="a"/> and <paramref name="b"/> by <paramref name="t"/> in HSV mode. </summary>
         public static Color LerpColorHSV(Color a, Color b, float t)
         {
             Vector3 aHSV = GetHSV(a);
