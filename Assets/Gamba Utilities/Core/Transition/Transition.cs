@@ -4,23 +4,51 @@ using static UnityEngine.Time;
 
 namespace GambaUtilities
 {
+    using Internal;
+
+    #region Template
+
+    namespace Internal
+    {
+        public abstract class TransitionTemplate
+        {
+            [Range(0, 5)]
+            public float duration = 1;
+            public AnimationCurve curve = new AnimationCurve(new Keyframe(0, 0), new Keyframe(1, 1));
+
+            [HideInInspector]
+            public bool isUnscaled;
+            [HideInInspector]
+            public bool isReversed;
+
+            public abstract event Action onTransitionEnd;
+
+            public abstract float Time { get; }
+
+            public abstract bool IsInTransition { get; }
+
+            /// <summary> Ends the transition at the current value. </summary>
+            public abstract void Cancel();
+
+            /// <summary> Ends the transition and triggers the callback. </summary>
+            public abstract void End();
+
+            /// <summary> Completes the transition in the target value and triggers the callback. </summary>
+            public abstract void Complete();
+        }
+    }
+
+    #endregion
+
     [Serializable]
     public class Transition : Transition<float> { }
 
     [Serializable]
-    public class Transition<T>
+    public class Transition<T> : TransitionTemplate
         where T : struct
     {
-        [Range(0, 5)]
-        public float duration = 1;
-        public AnimationCurve curve = new AnimationCurve(new Keyframe(0, 0), new Keyframe(1, 1));
-
         [HideInInspector]
         public T value;
-        [HideInInspector]
-        public bool isUnscaled;
-        [HideInInspector]
-        public bool isReversed;
 
         private T startValue;
         private T targetValue;
@@ -28,15 +56,15 @@ namespace GambaUtilities
         private float time;
         private bool isInTransition;
 
-        public event Action onTransitionEnd;
+        public override event Action onTransitionEnd;
 
         private float DeltaTime => isUnscaled ? unscaledDeltaTime : deltaTime;
 
         private float Progress => isReversed ? time : 1 - time;
 
-        public float Time => time;
+        public override float Time => time;
 
-        public bool IsInTransition => isInTransition;
+        public override bool IsInTransition => isInTransition;
 
         #region Start
 
@@ -150,8 +178,7 @@ namespace GambaUtilities
 
         #region Termination
 
-        /// <summary> Ends the transition at the current value. </summary>
-        public void Cancel()
+        public override void Cancel()
         {
             time = default;
             isInTransition = default;
@@ -161,16 +188,14 @@ namespace GambaUtilities
             targetValue = value;
         }
 
-        /// <summary> Ends the transition and triggers the callback. </summary>
-        public void End()
+        public override void End()
         {
             onTransitionEnd?.Invoke();
 
             Cancel();
         }
 
-        /// <summary> Completes the transition in the target value and triggers the callback. </summary>
-        public void Complete()
+        public override void Complete()
         {
             value = targetValue;
 
