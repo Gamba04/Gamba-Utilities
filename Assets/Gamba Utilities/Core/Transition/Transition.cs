@@ -6,57 +6,58 @@ namespace GambaUtilities
 {
     using Internal;
 
-    #region Template
+    #region TransitionBase
 
     namespace Internal
     {
-        public abstract class TransitionTemplate
+        public abstract class TransitionBase
         {
             [Range(0, 5)]
             public float duration = 1;
             public AnimationCurve curve = new AnimationCurve(new Keyframe(0, 0), new Keyframe(1, 1));
 
-            [HideInInspector]
-            public bool isUnscaled;
-            [HideInInspector]
-            public bool isReversed;
-
-            public abstract event Action onTransitionEnd;
-
             public abstract float Time { get; }
 
             public abstract bool IsInTransition { get; }
 
-            /// <summary> Ends the transition at the current value. </summary>
+            /// <summary> Silently stops the transition at the current value. </summary>
             public abstract void Cancel();
 
-            /// <summary> Ends the transition and triggers the callback. </summary>
-            public abstract void End();
+            /// <summary> Stops the transition at the current value and triggers the callback. </summary>
+            /// <param name="pendingUpdate"> Leave a pending update for syncing to the latest value. </param>
+            public abstract void Stop(bool pendingUpdate);
 
-            /// <summary> Completes the transition in the target value and triggers the callback. </summary>
-            public abstract void Complete();
+            /// <summary> Stops the transition at the target value and triggers the callback. </summary>
+            /// <param name="pendingUpdate"> Leave a pending update for syncing to the latest value. </param>
+            public abstract void Complete(bool pendingUpdate);
         }
     }
 
     #endregion
 
+    // ----------------------------------------------------------------------------------------------------
+
+    #region Transition
+
     [Serializable]
     public class Transition : Transition<float> { }
 
     [Serializable]
-    public class Transition<T> : TransitionTemplate
+    public class Transition<T> : TransitionBase
         where T : struct
     {
-        [HideInInspector]
         public T value;
 
         private T startValue;
         private T targetValue;
 
+        private bool isUnscaled;
+        private bool isReversed;
+
         private float time;
         private bool isInTransition;
 
-        public override event Action onTransitionEnd;
+        public event Action onTransitionEnd;
 
         private float DeltaTime => isUnscaled ? unscaledDeltaTime : deltaTime;
 
@@ -68,9 +69,9 @@ namespace GambaUtilities
 
         #region Start
 
-        public void Start(T target, Action onTransitionEnd = null) => Start(target, isUnscaled, isReversed, onTransitionEnd);
+        public void Start(T target, Action onTransitionEnd = null) => Start(target, default, default, onTransitionEnd);
 
-        public void Start(T target, bool isUnscaled, Action onTransitionEnd = null) => Start(target, isUnscaled, isReversed, onTransitionEnd);
+        public void Start(T target, bool isUnscaled, Action onTransitionEnd = null) => Start(target, isUnscaled, default, onTransitionEnd);
 
         public void Start(T target, bool isUnscaled, bool isReversed, Action onTransitionEnd = null)
         {
@@ -95,6 +96,14 @@ namespace GambaUtilities
 
         #region Update
 
+        public void Update(Action<T> onTransitionUpdate)
+        {
+            if (Update(out T value))
+            {
+                onTransitionUpdate?.Invoke(value);
+            }
+        }
+
         public bool Update(out T value)
         {
             bool updateValue = isInTransition;
@@ -105,25 +114,18 @@ namespace GambaUtilities
                 {
                     time -= DeltaTime / duration;
 
-                    if (time <= 0) End();
+                    if (time <= 0) Stop(false);
 
                     float interpolator = curve.Evaluate(Progress);
 
                     updateValue = Lerp(interpolator);
                 }
-                else Complete();
+                else Complete(false);
             }
+            else isInTransition = false;
 
             value = this.value;
             return updateValue;
-        }
-
-        public void Update(Action<T> onTransitionUpdate)
-        {
-            if (Update(out T value))
-            {
-                onTransitionUpdate?.Invoke(value);
-            }
         }
 
         #endregion
@@ -132,7 +134,7 @@ namespace GambaUtilities
 
         #region Interpolation
 
-        private delegate S LerpFunction<S>(S a, S b, float t);
+        private delegate L LerpFunction<L>(L a, L b, float t);
 
         private bool Lerp(float interpolator)
         {
@@ -148,12 +150,12 @@ namespace GambaUtilities
 
             return success;
 
-            void TryLerp<S>(LerpFunction<S> lerp)
+            void TryLerp<L>(LerpFunction<L> lerp)
             {
-                if (!success && typeof(S).IsAssignableFrom(typeof(T)))
+                if (!success && typeof(L).IsAssignableFrom(typeof(T)))
                 {
-                    S start = (S)(object)startValue;
-                    S target = (S)(object)targetValue;
+                    L start = (L)(object)startValue;
+                    L target = (L)(object)targetValue;
 
                     value = (T)(object)lerp(start, target, interpolator);
 
@@ -188,23 +190,26 @@ namespace GambaUtilities
             targetValue = value;
         }
 
-        public override void End()
+        public override void Stop(bool pendingUpdate = true)
         {
             onTransitionEnd?.Invoke();
 
             Cancel();
+
+            if (pendingUpdate) isInTransition = true;
         }
 
-        public override void Complete()
+        public override void Complete(bool pendingUpdate = true)
         {
             value = targetValue;
 
-            End();
-
-            isInTransition = true;
+            Stop(pendingUpdate);
         }
 
         #endregion
 
     }
+
+    #endregion
+
 }
