@@ -7,69 +7,72 @@ namespace GambaUtilities
 
 	#region MultiTransition
 
-	public abstract class MultiTransition : TransitionBase
+	namespace Internal
 	{
-		private TransitionBase referenceTransition;
-
-		public override float Time => referenceTransition != null ? referenceTransition.Time : default;
-
-		public override bool IsInTransition => referenceTransition != null && referenceTransition.IsInTransition;
-
-		protected abstract List<TransitionBase> Transitions { get; }
-
-		#region Start
-
-		protected void StartTransition<T>(Transition<T> transition, T target, bool isUnscaled, bool isReversed, ref Action onTransitionEnd)
-			where T : struct
+		public abstract class MultiTransition : TransitionBase
 		{
-			if (duration > 0)
-			{
-				if (!transition.Value.Equals(target))
-				{
-					referenceTransition = transition;
+			private TransitionBase referenceTransition;
 
-					transition.Start(target, isUnscaled, isReversed, onTransitionEnd);
+			public override float Time => referenceTransition != null ? referenceTransition.Time : default;
+
+			public override bool IsInTransition => referenceTransition != null && referenceTransition.IsInTransition;
+
+			protected abstract List<TransitionBase> Transitions { get; }
+
+			#region Start
+
+			protected void StartTransition<T>(Transition<T> transition, T target, bool isUnscaled, bool isReversed, ref Action onTransitionEnd)
+				where T : struct
+			{
+				if (duration > 0)
+				{
+					if (!transition.Value.Equals(target))
+					{
+						referenceTransition = transition;
+
+						transition.Start(target, isUnscaled, isReversed, onTransitionEnd);
+						onTransitionEnd = null;
+					}
+				}
+				else
+				{
+					transition.Value = target;
+
+					onTransitionEnd?.Invoke();
 					onTransitionEnd = null;
 				}
 			}
-			else
+
+			#endregion
+
+			// ----------------------------------------------------------------------------------------------------
+
+			#region Update
+
+			protected void UpdateTransition<T>(Transition<T> transition, ref bool updateValue, out T value)
+				where T : struct
 			{
-				transition.Value = target;
+				transition.duration = duration;
+				transition.curve = curve;
 
-				onTransitionEnd?.Invoke();
-				onTransitionEnd = null;
+				updateValue |= transition.Update(out value);
 			}
+
+			#endregion
+
+			// ----------------------------------------------------------------------------------------------------
+
+			#region Termination
+
+			public override void Cancel() => Transitions.ForEach(transition => transition.Cancel());
+
+			public override void Stop(bool pendingUpdate = true) => Transitions.ForEach(transition => transition.Stop(pendingUpdate));
+
+			public override void Complete(bool pendingUpdate = true) => Transitions.ForEach(transition => transition.Complete(pendingUpdate));
+
+			#endregion
+
 		}
-
-		#endregion
-
-		// ----------------------------------------------------------------------------------------------------
-
-		#region Update
-
-		protected void UpdateTransition<T>(Transition<T> transition, ref bool updateValue, out T value)
-			where T : struct
-		{
-			transition.duration = duration;
-			transition.curve = curve;
-
-			updateValue |= transition.Update(out value);
-		}
-
-		#endregion
-
-		// ----------------------------------------------------------------------------------------------------
-
-		#region Termination
-
-		public override void Cancel() => Transitions.ForEach(transition => transition.Cancel());
-
-		public override void Stop(bool pendingUpdate = true) => Transitions.ForEach(transition => transition.Stop(pendingUpdate));
-
-		public override void Complete(bool pendingUpdate = true) => Transitions.ForEach(transition => transition.Complete(pendingUpdate));
-
-		#endregion
-
 	}
 
 	#endregion

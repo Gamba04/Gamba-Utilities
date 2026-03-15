@@ -24,11 +24,11 @@ namespace GambaUtilities
 			public abstract void Cancel();
 
 			/// <summary> Stops the transition at the current value and triggers the callback. </summary>
-			/// <param name="pendingUpdate"> Leave a pending update for syncing to the latest value. </param>
+			/// <param name="pendingUpdate"> Leave a pending update for syncing to the latest value (recommended). </param>
 			public abstract void Stop(bool pendingUpdate);
 
 			/// <summary> Stops the transition at the target value and triggers the callback. </summary>
-			/// <param name="pendingUpdate"> Leave a pending update for syncing to the latest value. </param>
+			/// <param name="pendingUpdate"> Leave a pending update for syncing to the latest value (recommended). </param>
 			public abstract void Complete(bool pendingUpdate);
 		}
 	}
