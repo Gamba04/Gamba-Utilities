@@ -46,7 +46,7 @@ namespace GambaUtilities
     public class Transition<T> : TransitionBase
         where T : struct
     {
-        public T value;
+        private T value;
 
         private T startValue;
         private T targetValue;
@@ -57,7 +57,7 @@ namespace GambaUtilities
         private float time;
         private bool isInTransition;
 
-        public event Action onTransitionEnd;
+        private Action onTransitionEnd;
 
         private float DeltaTime => isUnscaled ? unscaledDeltaTime : deltaTime;
 
@@ -66,6 +66,8 @@ namespace GambaUtilities
         public override float Time => time;
 
         public override bool IsInTransition => isInTransition;
+
+        public T Value { get => value; set => this.value = value; }
 
         #region Start
 

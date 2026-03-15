@@ -24,7 +24,7 @@ namespace GambaUtilities
         {
             if (duration > 0)
             {
-                if (!transition.value.Equals(target))
+                if (!transition.Value.Equals(target))
                 {
                     referenceTransition = transition;
 
@@ -34,7 +34,7 @@ namespace GambaUtilities
             }
             else
             {
-                transition.value = target;
+                transition.Value = target;
 
                 onTransitionEnd?.Invoke();
                 onTransitionEnd = null;
@@ -86,9 +86,9 @@ namespace GambaUtilities
         private readonly Transition<A> transitionA = new Transition<A>();
         private readonly Transition<B> transitionB = new Transition<B>();
 
-        public A ValueA { get => transitionA.value; set => transitionA.value = value; }
+        public A ValueA { get => transitionA.Value; set => transitionA.Value = value; }
 
-        public B ValueB { get => transitionB.value; set => transitionB.value = value; }
+        public B ValueB { get => transitionB.Value; set => transitionB.Value = value; }
 
         protected override List<TransitionBase> Transitions => new List<TransitionBase>()
         {
@@ -164,11 +164,11 @@ namespace GambaUtilities
         private readonly Transition<B> transitionB = new Transition<B>();
         private readonly Transition<C> transitionC = new Transition<C>();
 
-        public A ValueA { get => transitionA.value; set => transitionA.value = value; }
+        public A ValueA { get => transitionA.Value; set => transitionA.Value = value; }
 
-        public B ValueB { get => transitionB.value; set => transitionB.value = value; }
+        public B ValueB { get => transitionB.Value; set => transitionB.Value = value; }
 
-        public C ValueC { get => transitionC.value; set => transitionC.value = value; }
+        public C ValueC { get => transitionC.Value; set => transitionC.Value = value; }
 
         protected override List<TransitionBase> Transitions => new List<TransitionBase>()
         {
@@ -250,13 +250,13 @@ namespace GambaUtilities
         private readonly Transition<C> transitionC = new Transition<C>();
         private readonly Transition<D> transitionD = new Transition<D>();
 
-        public A ValueA { get => transitionA.value; set => transitionA.value = value; }
+        public A ValueA { get => transitionA.Value; set => transitionA.Value = value; }
 
-        public B ValueB { get => transitionB.value; set => transitionB.value = value; }
+        public B ValueB { get => transitionB.Value; set => transitionB.Value = value; }
 
-        public C ValueC { get => transitionC.value; set => transitionC.value = value; }
+        public C ValueC { get => transitionC.Value; set => transitionC.Value = value; }
 
-        public D ValueD { get => transitionD.value; set => transitionD.value = value; }
+        public D ValueD { get => transitionD.Value; set => transitionD.Value = value; }
 
         protected override List<TransitionBase> Transitions => new List<TransitionBase>()
         {

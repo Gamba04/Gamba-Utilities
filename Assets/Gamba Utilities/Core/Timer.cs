@@ -125,7 +125,7 @@ public class Timer : MonoBehaviour
 
     // ----------------------------------------------------------------------------------------------------------------------------
 
-    #region Static Methods
+    #region Static
 
     #region Public
 
