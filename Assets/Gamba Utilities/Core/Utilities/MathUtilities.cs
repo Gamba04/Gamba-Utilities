@@ -3,128 +3,128 @@ using UnityEngine;
 
 namespace GambaUtilities
 {
-    public static class MathUtilities
-    {
+	public static class MathUtilities
+	{
 
-        #region Scalars
+		#region Scalars
 
-        /// <summary> Clamps negative values to zero. </summary>
-        public static void Ramp(ref int value) => value = Ramp(value);
+		/// <summary> Clamps negative values to zero. </summary>
+		public static void Ramp(ref int value) => value = Ramp(value);
 
-        /// <summary> Clamps negative values to zero. </summary>
-        public static int Ramp(int value) => Mathf.Max(0, value);
+		/// <summary> Clamps negative values to zero. </summary>
+		public static int Ramp(int value) => Mathf.Max(0, value);
 
-        /// <summary> Clamps negative values to zero. </summary>
-        public static void Ramp(ref float value) => value = Ramp(value);
+		/// <summary> Clamps negative values to zero. </summary>
+		public static void Ramp(ref float value) => value = Ramp(value);
 
-        /// <summary> Clamps negative values to zero. </summary>
-        public static float Ramp(float value) => Mathf.Max(0, value);
+		/// <summary> Clamps negative values to zero. </summary>
+		public static float Ramp(float value) => Mathf.Max(0, value);
 
-        /// <summary> Rounds <paramref name="value"/> to the nearest multiple of <paramref name="step"/>. </summary>
-        public static void RoundToMultiple(ref float value, float step) => value = RoundToMultiple(value, step);
+		/// <summary> Rounds <paramref name="value"/> to the nearest multiple of <paramref name="step"/>. </summary>
+		public static void RoundToMultiple(ref float value, float step) => value = RoundToMultiple(value, step);
 
-        /// <summary> Rounds <paramref name="value"/> to the nearest multiple of <paramref name="step"/>. </summary>
-        public static float RoundToMultiple(float value, float step) => Mathf.Round(value / step) * step;
+		/// <summary> Rounds <paramref name="value"/> to the nearest multiple of <paramref name="step"/>. </summary>
+		public static float RoundToMultiple(float value, float step) => Mathf.Round(value / step) * step;
 
-        /// <summary> Rounds <paramref name="value"/> to the nearest integrer pointing away from zero. </summary>
-        public static void RoundAwayFromZero(ref float value) => value = RoundAwayFromZero(value);
+		/// <summary> Rounds <paramref name="value"/> to the nearest integrer pointing away from zero. </summary>
+		public static void RoundAwayFromZero(ref float value) => value = RoundAwayFromZero(value);
 
-        /// <summary> Rounds <paramref name="value"/> to the nearest integrer pointing away from zero. </summary>
-        public static int RoundAwayFromZero(float value) => (int)Math.Round(value, MidpointRounding.AwayFromZero);
+		/// <summary> Rounds <paramref name="value"/> to the nearest integrer pointing away from zero. </summary>
+		public static int RoundAwayFromZero(float value) => (int)Math.Round(value, MidpointRounding.AwayFromZero);
 
-        /// <summary> Converts from degrees to radians. </summary>
-        public static float ToRadians(this float angle) => angle * Mathf.Deg2Rad;
+		/// <summary> Converts from degrees to radians. </summary>
+		public static float ToRadians(this float angle) => angle * Mathf.Deg2Rad;
 
-        /// <summary> Converts from radians to degrees. </summary>
-        public static float ToDegrees(this float angle) => angle * Mathf.Rad2Deg;
+		/// <summary> Converts from radians to degrees. </summary>
+		public static float ToDegrees(this float angle) => angle * Mathf.Rad2Deg;
 
-        #endregion
+		#endregion
 
-        // ----------------------------------------------------------------------------------------------------
+		// ----------------------------------------------------------------------------------------------------
 
-        #region Vectors
+		#region Vectors
 
-        public static Vector3 GetScale2D(float size) => new Vector3(size, size, 1);
+		public static Vector3 GetScale2D(float size) => new Vector3(size, size, 1);
 
-        /// <param name="angle"> Polar angle in radians. </param>
-        public static Vector2 GetDirection(float angle) => new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+		/// <param name="angle"> Polar angle in radians. </param>
+		public static Vector2 GetDirection(float angle) => new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
 
-        /// <summary> Returns the polar angle in radians. </summary>
-        public static float GetAngle(this Vector2 point)
-        {
-            float angle = Vector2.SignedAngle(Vector2.right, point);
+		/// <summary> Returns the polar angle in radians. </summary>
+		public static float GetAngle(this Vector2 point)
+		{
+			float angle = Vector2.SignedAngle(Vector2.right, point);
 
-            if (angle < 0) angle += 360;
+			if (angle < 0) angle += 360;
 
-            return angle.ToRadians();
-        }
+			return angle.ToRadians();
+		}
 
-        /// <summary> Returns the vector component across a <paramref name="direction"/>'s axis. </summary>
-        public static Vector2 Component(this Vector2 vector, Vector2 direction) => direction * Vector2.Dot(vector, direction);
+		/// <summary> Returns the vector component across a <paramref name="direction"/>'s axis. </summary>
+		public static Vector2 Component(this Vector2 vector, Vector2 direction) => direction * Vector2.Dot(vector, direction);
 
-        /// <summary> Returns the vector component across a <paramref name="direction"/>'s axis. </summary>
-        public static Vector3 Component(this Vector3 vector, Vector3 direction) => direction * Vector3.Dot(vector, direction);
+		/// <summary> Returns the vector component across a <paramref name="direction"/>'s axis. </summary>
+		public static Vector3 Component(this Vector3 vector, Vector3 direction) => direction * Vector3.Dot(vector, direction);
 
-        public static Vector2 Perpendicular(this Vector2 vector) => new Vector2(vector.y, -vector.x);
+		public static Vector2 Perpendicular(this Vector2 vector) => new Vector2(vector.y, -vector.x);
 
-        public static Vector3 Perpendicular(this Vector3 a, Vector3 b) => Vector3.Cross(a, b);
+		public static Vector3 Perpendicular(this Vector3 a, Vector3 b) => Vector3.Cross(a, b);
 
-        public static Vector2 MultipliedBy(this Vector2 a, Vector2 b) => a.MultipliedBy(b.x, b.y);
+		public static Vector2 MultipliedBy(this Vector2 a, Vector2 b) => a.MultipliedBy(b.x, b.y);
 
-        public static Vector2 MultipliedBy(this Vector2 a, float x, float y) => new Vector2(a.x * x, a.y * y);
+		public static Vector2 MultipliedBy(this Vector2 a, float x, float y) => new Vector2(a.x * x, a.y * y);
 
-        public static Vector3 MultipliedBy(this Vector3 a, Vector3 b) => a.MultipliedBy(b.x, b.y, b.z);
+		public static Vector3 MultipliedBy(this Vector3 a, Vector3 b) => a.MultipliedBy(b.x, b.y, b.z);
 
-        public static Vector3 MultipliedBy(this Vector3 a, float x, float y, float z) => new Vector3(a.x * x, a.y * y, a.z * z);
+		public static Vector3 MultipliedBy(this Vector3 a, float x, float y, float z) => new Vector3(a.x * x, a.y * y, a.z * z);
 
-        public static Vector2 DividedBy(this Vector2 a, Vector2 b) => a.DividedBy(b.x, b.y);
+		public static Vector2 DividedBy(this Vector2 a, Vector2 b) => a.DividedBy(b.x, b.y);
 
-        public static Vector2 DividedBy(this Vector2 a, float x, float y) => new Vector2(a.x / x, a.y / y);
+		public static Vector2 DividedBy(this Vector2 a, float x, float y) => new Vector2(a.x / x, a.y / y);
 
-        public static Vector3 DividedBy(this Vector3 a, Vector3 b) => a.DividedBy(b.x, b.y, b.z);
+		public static Vector3 DividedBy(this Vector3 a, Vector3 b) => a.DividedBy(b.x, b.y, b.z);
 
-        public static Vector3 DividedBy(this Vector3 a, float x, float y, float z) => new Vector3(a.x / x, a.y / y, a.z / z);
+		public static Vector3 DividedBy(this Vector3 a, float x, float y, float z) => new Vector3(a.x / x, a.y / y, a.z / z);
 
-        #endregion
+		#endregion
 
-        // ----------------------------------------------------------------------------------------------------
+		// ----------------------------------------------------------------------------------------------------
 
-        #region Colors
+		#region Colors
 
-        public static Color WithAlpha(this Color color, float value) => new Color(color.r, color.g, color.b, value);
+		public static Color WithAlpha(this Color color, float value) => new Color(color.r, color.g, color.b, value);
 
-        public static Color LerpColorHSV(Color a, Color b, float t)
-        {
-            Vector3 aHSV = GetHSV(a);
-            Vector3 bHSV = GetHSV(b);
+		public static Color LerpColorHSV(Color a, Color b, float t)
+		{
+			Vector3 aHSV = GetHSV(a);
+			Vector3 bHSV = GetHSV(b);
 
-            Vector3 targetHSV = Vector3.Lerp(aHSV, bHSV, t);
+			Vector3 targetHSV = Vector3.Lerp(aHSV, bHSV, t);
 
-            return Color.HSVToRGB(targetHSV.x, targetHSV.y, targetHSV.z);
+			return Color.HSVToRGB(targetHSV.x, targetHSV.y, targetHSV.z);
 
-            static Vector3 GetHSV(Color color)
-            {
-                Color.RGBToHSV(color, out float h, out float s, out float v);
+			static Vector3 GetHSV(Color color)
+			{
+				Color.RGBToHSV(color, out float h, out float s, out float v);
 
-                return new Vector3(h, s, v);
-            }
-        }
+				return new Vector3(h, s, v);
+			}
+		}
 
-        #endregion
+		#endregion
 
-        // ----------------------------------------------------------------------------------------------------
+		// ----------------------------------------------------------------------------------------------------
 
-        #region Other
+		#region Other
 
-        public static bool RandomBool() => UnityEngine.Random.Range(0, 2) == 0;
+		public static bool RandomBool() => UnityEngine.Random.Range(0, 2) == 0;
 
-        public static float VolumeToDB(float volume) => volume > 0 ? Mathf.Log10(volume) * 20 : float.MinValue;
+		public static float VolumeToDB(float volume) => volume > 0 ? Mathf.Log10(volume) * 20 : float.MinValue;
 
-        public static float DBToVolume(float dB) => Mathf.Pow(10, dB / 20);
+		public static float DBToVolume(float dB) => Mathf.Pow(10, dB / 20);
 
-        public static bool Contains(this LayerMask mask, int layer) => mask == (mask | (1 << layer));
+		public static bool Contains(this LayerMask mask, int layer) => mask == (mask | (1 << layer));
 
-        #endregion
+		#endregion
 
-    }
+	}
 }
