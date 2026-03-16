@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEditor;
@@ -185,6 +184,22 @@ namespace GambaUtilities
 		}
 
 		#endregion
+
+		#endregion
+
+		// ----------------------------------------------------------------------------------------------------
+
+		#region Strings
+
+		public static string Remove(this string text, params string[] values)
+		{
+			foreach (string value in values)
+			{
+				text = text.Replace(value, "");
+			}
+
+			return text;
+		}
 
 		#endregion
 
@@ -392,58 +407,6 @@ namespace GambaUtilities
 
 		// ----------------------------------------------------------------------------------------------------
 
-		#region Reflection
-
-		public static T GetValueOfType<T>(this SerializedProperty property)
-		{
-			if (property == null) throw new ArgumentNullException(nameof(property));
-
-			string path = property.propertyPath.Replace("Array.data", "").Replace("]", "");
-			string[] names = path.Split('.');
-
-			object currentObject = property.serializedObject.targetObject;
-
-			foreach (string name in names)
-			{
-				if (name[0] == '[') // Array
-				{
-					int index = int.Parse(name.Substring(1));
-
-					List<object> list = new List<object>(currentObject as IEnumerable<object>);
-
-					currentObject = list[index];
-				}
-				else // Object
-				{
-					FieldInfo field = GetField(currentObject.GetType(), name);
-
-					if (field == null) return default;
-
-					currentObject = field.GetValue(currentObject);
-				}
-			}
-
-			return (T)currentObject;
-
-			static FieldInfo GetField(Type type, string name)
-			{
-				FieldInfo field;
-
-				do
-				{
-					field = type.GetField(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-					type = type.BaseType;
-				}
-				while (field == null && type != null);
-
-				return field;
-			}
-		}
-
-		#endregion
-
-		// ----------------------------------------------------------------------------------------------------
-
 		#region Other
 
 		/// <summary> Resets the <see cref="Transform"/> to its default values. </summary>
@@ -478,38 +441,6 @@ namespace GambaUtilities
 #endif
 			}
 		}
-
-		#endregion
-
-		// ----------------------------------------------------------------------------------------------------
-
-		#region Editor
-
-#if UNITY_EDITOR
-
-		/// <summary> Destroys an <see cref="UnityEngine.Object"/> properly while in Edit Mode. </summary>
-		/// <param name="canUndo"> Specifies whether the action can be undone in the Editor. </param>
-		public static void DestroyInEditMode(UnityEngine.Object obj, bool canUndo = true)
-		{
-			if (Application.isPlaying) return;
-
-			EditorApplication.delayCall += DestroyObject;
-
-			void DestroyObject()
-			{
-				if (canUndo) Undo.DestroyObjectImmediate(obj);
-				else
-				{
-					EditorUtility.SetDirty(obj);
-
-					UnityEngine.Object.DestroyImmediate(obj);
-				}
-
-				EditorApplication.delayCall -= DestroyObject;
-			}
-		}
-
-#endif
 
 		#endregion
 
