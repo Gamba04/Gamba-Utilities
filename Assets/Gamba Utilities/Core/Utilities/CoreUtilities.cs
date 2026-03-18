@@ -191,6 +191,11 @@ namespace GambaUtilities
 
 		#region Strings
 
+		public static bool Contains(this string text, char value)
+		{
+			return text.Contains(value.ToString());
+		}
+
 		public static string Remove(this string text, params string[] values)
 		{
 			foreach (string value in values)

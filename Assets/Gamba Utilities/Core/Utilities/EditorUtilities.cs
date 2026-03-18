@@ -12,6 +12,7 @@ namespace GambaUtilities.Editor
 {
 	public static class EditorUtilities
 	{
+		public const string scriptableRoot = "Gamba Utilities/";
 
 		#region Serialized Properties
 
@@ -87,6 +88,42 @@ namespace GambaUtilities.Editor
 				while (field == null && type != null);
 
 				return field?.GetValue(currentObject);
+			}
+		}
+
+		#endregion
+
+		// ----------------------------------------------------------------------------------------------------
+
+		#region Assets
+
+		public static T FindAssetOfType<T>()
+			where T : UnityEngine.Object
+		{
+			string[] guids = AssetDatabase.FindAssets($"t:{typeof(T).Name}");
+
+			if (guids.Length > 0)
+			{
+				string path = AssetDatabase.GUIDToAssetPath(guids[0]);
+
+				return AssetDatabase.LoadAssetAtPath<T>(path);
+			}
+
+			return null;
+		}
+
+		public static T[] FindAssetsOfType<T>()
+			where T : UnityEngine.Object
+		{
+			string[] guids = AssetDatabase.FindAssets($"t:{typeof(T).Name}");
+
+			return Array.ConvertAll(guids, Load);
+
+			static T Load(string guid)
+			{
+				string path = AssetDatabase.GUIDToAssetPath(guid);
+
+				return AssetDatabase.LoadAssetAtPath<T>(path);
 			}
 		}
 
