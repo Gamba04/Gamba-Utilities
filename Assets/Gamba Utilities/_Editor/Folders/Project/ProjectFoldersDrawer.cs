@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using UnityEditorInternal;
 
 #if UNITY_EDITOR
 
@@ -47,7 +48,7 @@ namespace GambaUtilities.Editor.Folders
 		private const float oneColumnHeight = 16;
 		private const char separator = '/';
 
-		private static EditorApplication.ProjectWindowItemCallback onProjectWindowItemGUI;
+		private static EditorApplication.ProjectWindowItemCallback onProcessItem;
 
 		[SerializeField]
 		private List<Folder> folders = new List<Folder>();
@@ -59,14 +60,16 @@ namespace GambaUtilities.Editor.Folders
 			EditorApplication.projectWindowItemOnGUI -= OnProjectWindowItemGUI;
 			EditorApplication.projectWindowItemOnGUI += OnProjectWindowItemGUI;
 
-			EditorApplication.delayCall += Init;
-
-			static void OnProjectWindowItemGUI(string guid, Rect area) => onProjectWindowItemGUI?.Invoke(guid, area);
-
-			static void Init() => EditorUtilities.FindAssetOfType<ProjectFoldersDrawer>();
+			EditorApplication.delayCall += () =>
+			{
+				EditorUtilities.FindAssetOfType<ProjectFoldersDrawer>();
+				InternalEditorUtility.RepaintAllViews();
+			};
 		}
 
-		private void Hook() => onProjectWindowItemGUI = OnProjectWindowItemGUI;
+		private static void OnProjectWindowItemGUI(string guid, Rect area) => onProcessItem?.Invoke(guid, area);
+
+		private void Hook() => onProcessItem = ProcessItem;
 
 		#endregion
 
@@ -74,9 +77,9 @@ namespace GambaUtilities.Editor.Folders
 
 		#region Processing
 
-		private void OnProjectWindowItemGUI(string guid, Rect area)
+		private void ProcessItem(string guid, Rect area)
 		{
-            if (area.height > oneColumnHeight) return;
+			if (area.height > oneColumnHeight) return;
 
 			string path = AssetDatabase.GUIDToAssetPath(guid);
 
