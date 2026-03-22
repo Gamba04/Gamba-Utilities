@@ -1,212 +1,158 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Timer : MonoBehaviour
+namespace GambaUtilities
 {
-
-	#region Serializable
-
-	[Serializable]
-	private class Request
+	public class Timer : SingletonBehaviour<Timer>
 	{
-		[SerializeField, HideInInspector] private string name;
 
-		public float timer;
-		public Action action;
-		public bool unscaled;
-		public bool abort;
+		#region Serializable
 
-		private event Action<float> onUpdateValue;
-
-		public Request(float timer, Action action, Action<float> onUpdateValue, bool unscaled)
+		[Serializable]
+		private class Request
 		{
-			this.timer = timer;
-			this.action = action;
-			this.unscaled = unscaled;
-			this.onUpdateValue = onUpdateValue;
-		}
+			[SerializeField, HideInInspector]
+			private string name;
 
-		public void OnUpdateValue() => onUpdateValue?.Invoke(timer);
+			[SerializeField]
+			private float time;
+			[SerializeField]
+			private bool unscaled;
 
-		public void SetCancelRequest(CancelRequest cancel) => cancel.onCancel += Cancel;
+			private readonly Action action;
+			private readonly Action<float> onUpdate;
+			private readonly Action onExpire;
 
-		private void Cancel() => abort = true;
-
-		public void SetName(string name) => this.name = name;
-
-	}
-
-	[Serializable]
-	public class CancelRequest
-	{
-		public event Action onCancel;
-
-		public void Cancel()
-		{
-			onCancel?.Invoke();
-			onCancel = null;
-		}
-	}
-
-	#endregion
-
-	[SerializeField]
-	private List<Request> requests = new List<Request>();
-
-	#region Singleton
-
-	private static Timer instance = null;
-
-	public static Timer Instance
-	{
-		get
-		{
-			if (instance == null)
+			public Request(Action action, float time, bool unscaled, CancelRequest cancel, Action<float> onUpdate, Action<Request> onExpire, string name)
 			{
-				var sceneResult = FindObjectOfType<Timer>();
+				this.action = action;
+				this.time = time;
+				this.unscaled = unscaled;
+				this.onUpdate = onUpdate;
+				this.onExpire = Expire;
+				this.name = name ?? "Request";
 
-				if (sceneResult != null)
-				{
-					instance = sceneResult;
-				}
-				else
-				{
-					GameObject obj = new GameObject($"{GetTypeName(instance)}_Instance");
+				cancel?.Register(Cancel);
 
-					instance = obj.AddComponent<Timer>();
+				void Expire()
+				{
+					cancel?.Expire();
+					onExpire(this);
 				}
 			}
 
-			return instance;
-		}
-	}
-
-	private static string GetTypeName<T>(T obj) => typeof(T).Name;
-
-	private void Awake()
-	{
-		if (instance == null)
-		{
-			instance = this;
-		}
-		else if (instance != this)
-		{
-			Destroy(gameObject);
-		}
-	}
-
-	#endregion
-
-	// ----------------------------------------------------------------------------------------------------------------------------
-
-	#region Update
-
-	private void Update()
-	{
-		UpdateRequests();
-		CleanRequests();
-	}
-
-	private void UpdateRequests()
-	{
-		foreach (Request request in requests.ToArray())
-		{
-			if (request.abort) continue;
-
-			ReduceCooldownInternal(ref request.timer, request.unscaled, request.action);
-			request.OnUpdateValue();
-		}
-	}
-
-	private void CleanRequests() => requests.RemoveAll(request => request.timer <= 0 || request.abort);
-
-	#endregion
-
-	// ----------------------------------------------------------------------------------------------------------------------------
-
-	#region Static
-
-	#region Public
-
-	/// <summary> Call an Action after a period of time. </summary>
-	public static void CallOnDelay(Action action, float delay, string optionalName = "") => CallOnDelayInternal(action, false, delay, null, optionalName);
-
-	/// <summary> Call an Action after a period of time, with a cancellation Action. </summary>
-	public static void CallOnDelay(Action action, float delay, CancelRequest cancelRequest, string optionalName = "") => CallOnDelayInternal(action, false, delay, cancelRequest, null, optionalName);
-
-	/// <summary> Call an Action after a period of time, with a cancellation Action. </summary>
-	public static void CallOnDelay(Action action, float delay, CancelRequest cancelRequest, Action<float> onUpdateValue, string optionalName = "") => CallOnDelayInternal(action, false, delay, cancelRequest, onUpdateValue, optionalName);
-
-	/// <summary> Call an Action after a period of unscaled time. </summary>
-	public static void CallOnDelayUnscaled(Action action, float delay, string optionalName = "") => CallOnDelayInternal(action, true, delay, null, optionalName);
-
-	/// <summary> Call an Action after a period of unscaled time, with a cancellation Action. </summary>
-	public static void CallOnDelayUnscaled(Action action, float delay, CancelRequest cancelRequest, string optionalName = "") => CallOnDelayInternal(action, true, delay, cancelRequest, null, optionalName);
-
-	/// <summary> Call an Action after a period of unscaled time, with a cancellation Action. </summary>
-	public static void CallOnDelayUnscaled(Action action, float delay, CancelRequest cancelRequest, Action<float> onUpdateValue, string optionalName = "") => CallOnDelayInternal(action, true, delay, cancelRequest, onUpdateValue, optionalName);
-
-	/// <summary> Reduce a variable over time and call an Action if it reaches 0. </summary>
-	public static void ReduceCooldown(ref float value, Action endingAction = null) => ReduceCooldownInternal(ref value, false, endingAction);
-
-	/// <summary> Reduce a variable over unscaled time and call an Action if it reaches 0. </summary>
-	public static void ReduceCooldownUnscaled(ref float value, Action endingAction = null) => ReduceCooldownInternal(ref value, true, endingAction);
-
-	#endregion
-
-	// ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-	#region Private
-
-	private static void CallOnDelayInternal(Action action, bool unscaled, float delay, Action<float> onUpdateValue, string optionalName)
-	{
-		CallOnDelayInternalBase(action, unscaled, delay, null, onUpdateValue, optionalName);
-	}
-
-	private static void CallOnDelayInternal(Action action, bool unscaled, float delay, CancelRequest cancelRequest, Action<float> onUpdateValue, string optionalName)
-	{
-		CallOnDelayInternalBase(action, unscaled, delay, request => request.SetCancelRequest(cancelRequest), onUpdateValue, optionalName);
-	}
-
-	private static void CallOnDelayInternalBase(Action action, bool unscaled, float delay, Action<Request> requestSetup, Action<float> onUpdateValue, string optionalName)
-	{
-		if (delay > 0)
-		{
-			Request request = new Request(delay, action, onUpdateValue, unscaled);
-
-			request.SetName(optionalName);
-			requestSetup?.Invoke(request);
-
-			Instance.requests.Add(request);
-		}
-		else
-		{
-			action?.Invoke();
-		}
-	}
-
-	private static void ReduceCooldownInternal(ref float value, bool unscaled, Action endingAction)
-	{
-		if (value > 0)
-		{
-			value -= unscaled ? Time.unscaledDeltaTime : Time.deltaTime;
-
-			if (value <= 0)
+			public void Update()
 			{
-				value = 0;
+				Decrease(ref time, unscaled, Complete);
 
-				endingAction?.Invoke();
+				onUpdate?.Invoke(time);
+			}
+
+			private void Cancel()
+			{
+				onExpire?.Invoke();
+			}
+
+			private void Complete()
+			{
+				action?.Invoke();
+				onExpire?.Invoke();
 			}
 		}
-		else if (value < 0)
+
+		public class CancelRequest
 		{
-			value = 0;
+			private Action onCancel;
+
+			public void Register(Action cancel)
+			{
+				onCancel += cancel;
+			}
+
+			public void Cancel()
+			{
+				onCancel?.Invoke();
+			}
+
+			public void Expire()
+			{
+				onCancel = null;
+			}
 		}
+
+		#endregion
+
+		[SerializeField]
+		private List<Request> requests = new List<Request>();
+
+		#region Delay
+
+		/// <summary> Delay the execution of an <paramref name="action"/>. </summary>
+		public static void Delay(Action action, float delay, string name = null) => Delay(action, delay, false, null, null, name);
+
+		/// <summary> Delay the execution of an <paramref name="action"/>. </summary>
+		public static void Delay(Action action, float delay, bool unscaled, string name = null) => Delay(action, delay, unscaled, null, null, name);
+
+		/// <summary> Delay the execution of an <paramref name="action"/> with a way to <paramref name="cancel"/> the request. </summary>
+		public static void Delay(Action action, float delay, bool unscaled, CancelRequest cancel, string name = null) => Delay(action, delay, unscaled, cancel, null, name);
+
+		/// <summary> Delay the execution of an <paramref name="action"/> with a way to <paramref name="cancel"/> the request. </summary>
+		/// <param name="onUpdate"> Receive updates of the remaining time of the request. </param>
+		public static void Delay(Action action, float delay, bool unscaled, CancelRequest cancel, Action<float> onUpdate, string name = null)
+		{
+			if (delay > 0) Instance.CreateRequest(action, delay, unscaled, cancel, onUpdate, name);
+			else action?.Invoke();
+		}
+
+		#endregion
+
+		// ----------------------------------------------------------------------------------------------------
+
+		#region Decrease
+
+		/// <summary> Decreases a positive <paramref name="value"/> over time and triggers an <paramref name="action"/> when it reaches zero. </summary>
+		public static void Decrease(ref float value, Action action = null) => Decrease(ref value, false, action);
+
+		/// <summary> Decreases a positive <paramref name="value"/> over time and triggers an <paramref name="action"/> when it reaches zero. </summary>
+		public static void Decrease(ref float value, bool unscaled, Action action = null)
+		{
+			if (value > 0)
+			{
+				value -= unscaled ? Time.unscaledDeltaTime : Time.deltaTime;
+
+				if (value <= 0)
+				{
+					value = 0;
+
+					action?.Invoke();
+				}
+			}
+			else value = 0;
+		}
+
+		#endregion
+
+		// ----------------------------------------------------------------------------------------------------
+
+		#region Requests
+
+		private void CreateRequest(Action action, float delay, bool unscaled, CancelRequest cancel, Action<float> onUpdate, string name)
+		{
+			requests.Add(new Request(action, delay, unscaled, cancel, onUpdate, Expire, name));
+
+			void Expire(Request request) => requests.Remove(request);
+		}
+
+		private void Update()
+		{
+			foreach (Request request in requests.ToArray())
+			{
+				request.Update();
+			}
+		}
+
+		#endregion
+
 	}
-
-	#endregion
-
-	#endregion
-
 }
