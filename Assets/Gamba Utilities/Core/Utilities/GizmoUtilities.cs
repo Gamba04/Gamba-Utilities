@@ -2,11 +2,10 @@ using System;
 using UnityEngine;
 using UnityEditor;
 
-namespace GambaUtilities
-{
-
 #if UNITY_EDITOR
 
+namespace GambaUtilities.Editor
+{
 	public static class GizmoUtilities
 	{
 
@@ -162,7 +161,6 @@ namespace GambaUtilities
 		#endregion
 
 	}
+}
 
 #endif
-
-}

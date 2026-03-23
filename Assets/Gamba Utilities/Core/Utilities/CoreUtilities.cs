@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEditor;
+using Random = UnityEngine.Random;
+using Object = UnityEngine.Object;
 
 namespace GambaUtilities
 {
@@ -143,7 +145,7 @@ namespace GambaUtilities
 			{
 				if (forceChange && pool.Count > 1) pool.RemoveAt(i);
 
-				int index = UnityEngine.Random.Range(0, pool.Count);
+				int index = Random.Range(0, pool.Count);
 
 				result.Add(pool[index]);
 				pool.RemoveAt(index);
@@ -169,15 +171,15 @@ namespace GambaUtilities
 
 		/// <summary> Destroys everything in the list. </summary>
 		public static void DestroyAll<O>(this List<O> list, bool includeGameObjects = true)
-			where O : UnityEngine.Object
+			where O : Object
 		{
 			for (int i = 0; i < list.Count; i++)
 			{
-				UnityEngine.Object obj = list[i];
+				Object obj = list[i];
 
 				if (includeGameObjects && obj is Component component) obj = component.gameObject;
 
-				UnityEngine.Object.Destroy(obj);
+				Object.Destroy(obj);
 			}
 
 			list.Clear();

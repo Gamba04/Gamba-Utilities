@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace GambaUtilities
 {
@@ -116,7 +117,7 @@ namespace GambaUtilities
 
 		#region Other
 
-		public static bool RandomBool() => UnityEngine.Random.Range(0, 2) == 0;
+		public static bool RandomBool() => Random.Range(0, 2) == 0;
 
 		public static float VolumeToDB(float volume) => volume > 0 ? Mathf.Log10(volume) * 20 : float.MinValue;
 

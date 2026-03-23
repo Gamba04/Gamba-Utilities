@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 using UnityEditor;
+using Object = UnityEngine.Object;
 
 #if UNITY_EDITOR
 
@@ -98,7 +99,7 @@ namespace GambaUtilities.Editor
 		#region Assets
 
 		public static T FindAssetOfType<T>()
-			where T : UnityEngine.Object
+			where T : Object
 		{
 			string[] guids = AssetDatabase.FindAssets($"t:{typeof(T).Name}");
 
@@ -113,7 +114,7 @@ namespace GambaUtilities.Editor
 		}
 
 		public static T[] FindAssetsOfType<T>()
-			where T : UnityEngine.Object
+			where T : Object
 		{
 			string[] guids = AssetDatabase.FindAssets($"t:{typeof(T).Name}");
 
@@ -133,9 +134,9 @@ namespace GambaUtilities.Editor
 
 		#region Other
 
-		/// <summary> Destroys an <see cref="UnityEngine.Object"/> properly while in Edit Mode. </summary>
+		/// <summary> Destroys an <see cref="Object"/> properly while in Edit Mode. </summary>
 		/// <param name="canUndo"> Specifies whether the action can be undone in the Editor. </param>
-		public static void DestroyInEditMode(UnityEngine.Object obj, bool canUndo = true)
+		public static void DestroyInEditMode(Object obj, bool canUndo = true)
 		{
 			if (Application.isPlaying) return;
 
@@ -151,7 +152,7 @@ namespace GambaUtilities.Editor
 				{
 					EditorUtility.SetDirty(obj);
 
-					UnityEngine.Object.DestroyImmediate(obj);
+					Object.DestroyImmediate(obj);
 				}
 
 				EditorApplication.delayCall -= DestroyObject;
