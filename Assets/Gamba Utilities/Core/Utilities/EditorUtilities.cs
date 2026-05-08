@@ -14,6 +14,7 @@ namespace GambaUtilities.Editor
 	public static class EditorUtilities
 	{
 		public const string scriptableRoot = "Gamba Utilities/";
+		public const string windowRoot = "Window/Gamba Utilities/";
 
 		#region Serialized Properties
 
