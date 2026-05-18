@@ -7,14 +7,13 @@ namespace GambaUtilities
 	public class Timer : SingletonBehaviour<Timer>
 	{
 
-		#region Serializable
+		#region Request
 
 		[Serializable]
 		private class Request
 		{
 			[SerializeField, HideInInspector]
 			private string name;
-
 			[SerializeField]
 			private float time;
 			[SerializeField]

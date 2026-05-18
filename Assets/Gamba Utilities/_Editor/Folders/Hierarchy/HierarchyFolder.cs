@@ -6,7 +6,6 @@ namespace GambaUtilities.Editor
     [DisallowMultipleComponent]
     public class HierarchyFolder : MonoBehaviour
     {
-        [Space]
         [SerializeField]
         private Color color = Color.white;
 

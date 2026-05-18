@@ -1,55 +1,85 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEditor;
-using Random = UnityEngine.Random;
 using Object = UnityEngine.Object;
+using Random = UnityEngine.Random;
 
 namespace GambaUtilities
 {
 	public static class CoreUtilities
 	{
+		public const string scriptableRoot = "Gamba Utilities/";
 
 		#region Lists
 
 		#region Resize
 
-		/// <summary> Resizes the list to match the amount of values in <paramref name="enumType"/>, without deleting the existing elements. </summary>
+		/// <summary> Resizes the list to have an amount of elements between <paramref name="min"/> and <paramref name="max"/>, while keeping the existing elements. </summary>
+		public static void ResizeFrom<T>(this List<T> list, int min, int max)
+		{
+			list.ResizeFrom(min, max, () => default);
+		}
+
+		/// <summary> Resizes the list to have an amount of elements between <paramref name="min"/> and <paramref name="max"/>, while keeping the existing elements. </summary>
+		/// <param name="customDefault"> If the list size increases, the new elements will get the value of <paramref name="customDefault"/>(). </param> 
+		public static void ResizeFrom<T>(this List<T> list, int min, int max, Func<T> customDefault)
+		{
+			list.Resize(Mathf.Clamp(list.Count, min, max), customDefault);
+		}
+
+		/// <summary> Resizes the list to have a minimum <paramref name="size"/>, while keeping the existing elements. </summary>
+		public static void ResizeMin<T>(this List<T> list, int size)
+		{
+			list.ResizeMin(size, () => default);
+		}
+
+		/// <summary> Resizes the list to have a minimum <paramref name="size"/>, while keeping the existing elements. </summary>
+		/// <param name="customDefault"> If the list size increases, the new elements will get the value of <paramref name="customDefault"/>(). </param> 
+		public static void ResizeMin<T>(this List<T> list, int size, Func<T> customDefault)
+		{
+			list.Resize(Mathf.Max(list.Count, size), customDefault);
+		}
+
+		/// <summary> Resizes the list to have a maximum <paramref name="size"/>, while keeping the existing elements. </summary>
+		public static void ResizeMax<T>(this List<T> list, int size)
+		{
+			list.Resize(Mathf.Min(list.Count, size));
+		}
+
+		/// <summary> Resizes the list to match the amount of values in <paramref name="enumType"/>, while keeping the existing elements. </summary>
 		public static void Resize<T>(this List<T> list, Type enumType)
 		{
 			list.Resize(enumType, () => default);
 		}
 
-		/// <summary>
-		/// Resizes the list to match the amount of values in <paramref name="enumType"/>, without deleting the existing elements. <para/>
-		/// If the list size increases, the new elements will get the value of <paramref name="customDefault"/>().
-		/// </summary>
+		/// <summary> Resizes the list to match the amount of values in <paramref name="enumType"/>, while keeping the existing elements. </summary>
+		/// <param name="customDefault"> If the list size increases, the new elements will get the value of <paramref name="customDefault"/>(). </param> 
 		public static void Resize<T>(this List<T> list, Type enumType, Func<T> customDefault)
 		{
-			int length = GetEnumLength(enumType);
+			int size = GetEnumLength(enumType);
 
-			list.Resize(length, customDefault);
+			list.Resize(size, customDefault);
 		}
 
-		/// <summary> Resizes the list to <paramref name="length"/>, without deleting the existing elements. </summary>
-		public static void Resize<T>(this List<T> list, int length)
+		/// <summary> Resizes the list to <paramref name="size"/>, while keeping the existing elements. </summary>
+		public static void Resize<T>(this List<T> list, int size)
 		{
-			list.Resize(length, () => default);
+			list.Resize(size, () => default);
 		}
 
-		/// <summary>
-		/// Resizes the list to <paramref name="length"/>, without deleting the existing elements. <para/>
-		/// If the list size increases, the new elements will get the value of <paramref name="customDefault"/>().
-		/// </summary>
-		public static void Resize<T>(this List<T> list, int length, Func<T> customDefault)
+		/// <summary> Resizes the list to <paramref name="size"/>, while keeping the existing elements. </summary>
+		/// <param name="customDefault"> If the list size increases, the new elements will get the value of <paramref name="customDefault"/>(). </param> 
+		public static void Resize<T>(this List<T> list, int size, Func<T> customDefault)
 		{
-			if (list.Count == length) return;
+			if (list.Count == size) return;
 
-			List<T> result = new List<T>(length);
+			List<T> result = new List<T>(size);
 
-			for (int i = 0; i < length; i++)
+			for (int i = 0; i < size; i++)
 			{
 				result.Add(i < list.Count ? list[i] : customDefault());
 			}
@@ -169,6 +199,20 @@ namespace GambaUtilities
 			list.AddRange(collection);
 		}
 
+		/// <summary> Moves <paramref name="element"/> to the start of the list. </summary>
+		public static void MoveToStart<T>(this List<T> list, T element)
+		{
+			list.Remove(element);
+			list.Insert(0, element);
+		}
+
+		/// <summary> Moves <paramref name="element"/> to the end of the list. </summary>
+		public static void MoveToEnd<T>(this List<T> list, T element)
+		{
+			list.Remove(element);
+			list.Add(element);
+		}
+
 		/// <summary> Destroys everything in the list. </summary>
 		public static void DestroyAll<O>(this List<O> list, bool includeGameObjects = true)
 			where O : Object
@@ -193,6 +237,9 @@ namespace GambaUtilities
 
 		#region Strings
 
+		/// <summary> Indicates whether the value is neither <see langword="null"/> nor empty. </summary>
+		public static bool HasContent(this string text) => !string.IsNullOrEmpty(text);
+
 		public static bool Contains(this string text, char value)
 		{
 			return text.Contains(value.ToString());
@@ -204,6 +251,24 @@ namespace GambaUtilities
 			{
 				text = text.Replace(value, "");
 			}
+
+			return text;
+		}
+
+		/// <summary> Converts the text to Proper Case. </summary>
+		/// <remarks>
+		///		Examples:
+		///		<code>
+		///			"camelCase"  → "Camel Case"
+		///			"PascalCase" → "Pascal Case"
+		///			"ABCAcronym" → "ABC Acronym"
+		///			"123Numbers" → "123 Numbers"
+		///		</code>
+		/// </remarks>
+		public static string ToProperCase(this string text)
+		{
+			text = Regex.Replace(text, @"^\p{Ll}", match => match.Value.ToUpper());
+			text = Regex.Replace(text, @"(?<!^)(?=\p{Lu}\p{Ll})|(?<=\p{Ll})(?=\p{Lu})|(?<=\p{Ll})(?=\p{N})|(?<=\p{N})(?=\p{L})", " ");
 
 			return text;
 		}
@@ -414,39 +479,81 @@ namespace GambaUtilities
 
 		// ----------------------------------------------------------------------------------------------------
 
-		#region Other
+		#region Reset
 
 		/// <summary> Resets the <see cref="Transform"/> to its default values. </summary>
 		public static void Reset(this Transform transform)
 		{
-			SetUndoRecording(true);
-			ApplyReset();
-			SetUndoRecording(false);
+			transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+			transform.localScale = Vector3.one;
 
-			void ApplyReset()
+			if (transform is RectTransform rectTransform)
 			{
-				transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-				transform.localScale = Vector3.one;
-
-				if (transform is RectTransform rectTransform)
-				{
-					rectTransform.pivot = Vector2.one / 2;
-					rectTransform.anchorMin = Vector2.one / 2;
-					rectTransform.anchorMax = Vector2.one / 2;
-					rectTransform.anchoredPosition = Vector2.zero;
-					rectTransform.sizeDelta = Vector2.one * 100;
-				}
+				rectTransform.pivot = Vector2.one / 2;
+				rectTransform.anchorMin = Vector2.one / 2;
+				rectTransform.anchorMax = Vector2.one / 2;
+				rectTransform.anchoredPosition = Vector2.zero;
+				rectTransform.sizeDelta = Vector2.one * 100;
 			}
+		}
 
-			void SetUndoRecording(bool enabled)
+		/// <summary> Resets the <see cref="AudioSource"/> to its default values. </summary>
+		public static void Reset(this AudioSource source, bool playOnAwake = true)
+		{
+			source.clip = null;
+			source.outputAudioMixerGroup = null;
+			source.mute = false;
+			source.bypassEffects = false;
+			source.bypassListenerEffects = false;
+			source.bypassReverbZones = false;
+			source.playOnAwake = playOnAwake;
+			source.loop = false;
+			source.priority = 128;
+			source.volume = 1;
+			source.panStereo = 0;
+			source.spatialBlend = 0;
+			source.reverbZoneMix = 1;
+			source.dopplerLevel = 1;
+			source.spread = 0;
+			source.rolloffMode = AudioRolloffMode.Logarithmic;
+			source.minDistance = 1;
+			source.maxDistance = 500;
+		}
+
+		#endregion
+
+		// ----------------------------------------------------------------------------------------------------
+
+		#region Other
+
+		public static void RecordUndo(Object target, Action action, string description = "")
+		{
+			SetRecording(true);
+			action?.Invoke();
+			SetRecording(false);
+
+			void SetRecording(bool enabled)
 			{
+
 #if UNITY_EDITOR
-				if (Application.isPlaying) return;
 
-				if (enabled) Undo.RecordObject(transform, "Reset Transform");
-				else Undo.FlushUndoRecordObjects();
+				if (!Application.isPlaying)
+				{
+					if (enabled) Undo.RecordObject(target, description);
+					else Undo.FlushUndoRecordObjects();
+				}
+
 #endif
+
 			}
+		}
+
+		/// <summary> Returns the <typeparamref name="O"/> only if it actually exists. </summary>
+		/// <remarks> Operators different than the ones overloaded by Unity don't evaluate to <see langword="null"/> when the <typeparamref name="O"/> is missing or can't be resolved; this fixes that. </remarks>
+		public static O ExistingObject<O>(this O obj)
+			where O : Object
+		{
+			return obj ? obj : null;
 		}
 
 		#endregion

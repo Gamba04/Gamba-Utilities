@@ -7,14 +7,14 @@ namespace GambaUtilities
 {
 	/// <summary> Modify the field's display name with custom text in the Inspector. </summary>
 	/// <remarks>
-	/// You may use the following macros to insert specific data in the name:
-	/// <code>
-	/// {name} : Original display name of the field
-	/// {var}  : Actual name of the field
-	/// {i}    : (Lists/Arrays) index
-	/// {i+1}  : (Lists/Arrays) index + 1
-	/// {i-1}  : (Lists/Arrays) index - 1
-	/// </code>
+	///		You may use the following macros to insert specific data in the name:
+	///		<code>
+	///			{name} : Original display name of the field
+	///			{var}  : Actual name of the field
+	///			{i}    : (Lists/Arrays) index
+	///			{i+1}  : (Lists/Arrays) index + 1
+	///			{i-1}  : (Lists/Arrays) index - 1
+	///		</code>
 	/// </remarks>
 	[AttributeUsage(AttributeTargets.Field)]
 	public class CustomNameAttribute : PropertyAttribute

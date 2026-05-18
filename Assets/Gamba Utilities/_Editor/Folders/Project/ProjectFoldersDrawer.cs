@@ -2,19 +2,20 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
-using UnityEditorInternal;
 
 #if UNITY_EDITOR
+
+using UnityEditorInternal;
 
 namespace GambaUtilities.Editor.Folders
 {
 	[InitializeOnLoad]
-	[CreateAssetMenu(fileName = name, menuName = EditorUtilities.scriptableRoot + name)]
+	[CreateAssetMenu(fileName = name, menuName = CoreUtilities.scriptableRoot + name)]
 	public class ProjectFoldersDrawer : ScriptableObject
 	{
 		private new const string name = "Project Folders";
 
-		#region Serializable
+		#region Folder
 
 		[Serializable]
 		private class Folder
@@ -23,9 +24,12 @@ namespace GambaUtilities.Editor.Folders
 			private string name;
 			[SerializeField]
 			private string path;
-			public Color color = Color.white;
+			[SerializeField]
+			private Color color = Color.white;
 
 			public string Path => $"Assets/{path}";
+
+			public Color Color => color;
 
 			public void EditorUpdate()
 			{
@@ -92,7 +96,7 @@ namespace GambaUtilities.Editor.Folders
 			{
 				if (TryGetFolder(path, out Folder folder))
 				{
-					FolderDrawer.DrawFolder(area, folder.color, level);
+					FolderDrawer.DrawFolder(area, folder.Color, level);
 				}
 
 				TrimPath(ref path);

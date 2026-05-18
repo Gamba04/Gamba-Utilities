@@ -3,12 +3,13 @@ using UnityEngine;
 namespace GambaUtilities
 {
 	/// <summary> Ensures that <typeparamref name="T"/> can only have one active instance. </summary>
+	[DisallowMultipleComponent]
 	public abstract class SingletonBehaviour<T> : MonoBehaviour
 		where T : SingletonBehaviour<T>
 	{
 		private static T instance;
 
-		public static T Instance => instance ?? FindInstance() ?? BuildInstance();
+		public static T Instance => instance.ExistingObject() ?? FindInstance() ?? BuildInstance();
 
 		#region Instance
 
@@ -19,7 +20,7 @@ namespace GambaUtilities
 
 		private static T BuildInstance()
 		{
-			GameObject gameObject = new GameObject(typeof(T).Name);
+			GameObject gameObject = new GameObject(typeof(T).Name.ToProperCase());
 
 			return instance = gameObject.AddComponent<T>();
 		}
@@ -32,9 +33,19 @@ namespace GambaUtilities
 
 		private void Awake()
 		{
-			if (instance == null) instance = this as T;
-			else if (this is T && instance != this) Destroy(gameObject);
+			if (instance == null)
+			{
+				instance = this as T;
+
+				Init();
+			}
+			else if (this is T && instance != this)
+			{
+				Destroy(gameObject);
+			}
 		}
+
+		protected virtual void Init() { }
 
 		#endregion
 
