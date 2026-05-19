@@ -94,19 +94,26 @@ public static class Debug
 
 	private static void Execute(object message, Action<string> method, Color? color = null, FontStyle style = FontStyle.Normal)
 	{
-		if (Validate())
+		if (IsValid())
 		{
 			message ??= "Null";
-			string text = message.ToString();
 
-			ApplyColor(ref text, color);
-			ApplyStyle(ref text, style);
+			string text = message.ToString();
+			string[] lines = text.Split('\n');
+
+			for (int i = 0; i < lines.Length; i++)
+			{
+				ApplyColor(ref lines[i], color);
+				ApplyStyle(ref lines[i], style);
+			}
+
+			text = string.Join("\n", lines);
 
 			method(text + "\n");
 		}
 	}
 
-	public static bool Validate()
+	private static bool IsValid()
 	{
 		bool isValid = enabled;
 
