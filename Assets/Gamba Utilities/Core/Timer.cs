@@ -43,7 +43,7 @@ namespace GambaUtilities
 
 			public void Update()
 			{
-				Decrease(ref time, unscaled, Complete);
+				if (Decrease(ref time, unscaled)) Complete();
 
 				onUpdate?.Invoke(time);
 			}
@@ -116,6 +116,15 @@ namespace GambaUtilities
 		/// <summary> Decreases a positive <paramref name="value"/> over time and triggers an <paramref name="action"/> when it reaches zero. </summary>
 		public static void Decrease(ref float value, bool unscaled, Action action = null)
 		{
+			if (Decrease(ref value, unscaled)) action?.Invoke();
+		}
+
+		/// <summary> Decreases a positive <paramref name="value"/> over time and returns <see langword="true"/> when it reaches zero. </summary>
+		public static bool Decrease(ref float value) => Decrease(ref value, false);
+
+		/// <summary> Decreases a positive <paramref name="value"/> over time and returns <see langword="true"/> when it reaches zero. </summary>
+		public static bool Decrease(ref float value, bool unscaled)
+		{
 			if (value > 0)
 			{
 				value -= unscaled ? Time.unscaledDeltaTime : Time.deltaTime;
@@ -124,10 +133,12 @@ namespace GambaUtilities
 				{
 					value = 0;
 
-					action?.Invoke();
+					return true;
 				}
 			}
 			else value = 0;
+
+			return false;
 		}
 
 		#endregion
@@ -145,9 +156,9 @@ namespace GambaUtilities
 
 		private void Update()
 		{
-			foreach (Request request in requests.ToArray())
+			for (int i = requests.Count - 1; i > -1; i--)
 			{
-				request.Update();
+				requests[i].Update();
 			}
 		}
 

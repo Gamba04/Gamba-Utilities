@@ -99,8 +99,10 @@ namespace GambaUtilities.Audio
 
 		private void Update()
 		{
-			foreach (AudioSource source in activeSources.ToArray())
+			for (int i = activeSources.Count - 1; i > -1; i--)
 			{
+				AudioSource source = activeSources[i];
+
 				if (!source.isPlaying)
 				{
 					SetSource(source, false);

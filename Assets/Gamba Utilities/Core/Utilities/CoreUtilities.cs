@@ -184,12 +184,22 @@ namespace GambaUtilities
 			list.Replace(result);
 		}
 
-		/// <summary> Iterates each element in an <paramref name="action"/> that includes the index. </summary>
+		/// <summary> Iterates each element and calls an <paramref name="action"/> that includes the index. </summary>
 		public static void ForEach<T>(this List<T> list, Action<T, int> action)
 		{
-			if (action == null) return;
-
 			for (int i = 0; i < list.Count; i++) action(list[i], i);
+		}
+
+		/// <summary> Iterates each element in a reversed loop and calls an <paramref name="action"/>. </summary>
+		public static void ForEachReversed<T>(this List<T> list, Action<T> action)
+		{
+			for (int i = list.Count - 1; i > -1; i--) action(list[i]);
+		}
+
+		/// <summary> Iterates each element in a reversed loop and calls an <paramref name="action"/> that includes the index. </summary>
+		public static void ForEachReversed<T>(this List<T> list, Action<T, int> action)
+		{
+			for (int i = list.Count - 1; i > -1; i--) action(list[i], i);
 		}
 
 		/// <summary> Replaces the list contents with <paramref name="collection"/>. </summary>
