@@ -24,6 +24,7 @@ namespace GambaUtilities.Audio
 		private void InitPool()
 		{
 			sources.Capacity = poolSize;
+			activeSources.Capacity = poolSize;
 
 			for (int i = 0; i < poolSize; i++)
 			{

@@ -15,12 +15,9 @@ namespace GambaUtilities
 		public abstract class Sound
 		{
 			[SerializeField]
-			private TrackSelector selector;
+			private TrackSelector track;
 
-			public bool TryGetTrack(out AudioTrack track)
-			{
-				return selector.TryGetTrack(out track);
-			}
+			protected AudioTrack Track => track.GetTrack();
 		}
 	}
 
@@ -53,21 +50,15 @@ namespace GambaUtilities
 		/// <param name="volume"> This value is multiplied by the track's configured volume. </param>
 		public void Play(float volume = 1)
 		{
-			if (TryGetTrack(out AudioTrack track))
-			{
-				if (transform) AudioPlayer.Play(track, transform.position, volume);
-				else AudioPlayer.Play(track, volume);
-			}
+			if (transform) AudioPlayer.Play(Track, transform.position, volume);
+			else AudioPlayer.Play(Track, volume);
 		}
 
 		/// <summary> Plays the sound independently at the specified position. </summary>
 		/// <param name="volume"> This value is multiplied by the track's configured volume. </param>
 		public void Play(Vector3 position, float volume = 1)
 		{
-			if (TryGetTrack(out AudioTrack track))
-			{
-				AudioPlayer.Play(track, position, volume);
-			}
+			AudioPlayer.Play(Track, position, volume);
 		}
 
 		#endregion
@@ -98,15 +89,12 @@ namespace GambaUtilities
 		/// <param name="volume"> This value is multiplied by the track's configured volume. </param>
 		public void Play(bool loop, float volume = 1)
 		{
-			if (TryGetTrack(out AudioTrack track))
-			{
-				track.Setup(source);
+			Track.Setup(source);
 
-				source.loop = loop;
-				source.volume *= volume;
+			source.loop = loop;
+			source.volume *= volume;
 
-				source.Play();
-			}
+			source.Play();
 		}
 
 		#endregion
@@ -140,16 +128,16 @@ namespace GambaUtilities
 	namespace Audio
 	{
 		[Serializable]
-		public class TrackSelector
+		public struct TrackSelector
 		{
 			public AudioLibrary library;
 			public int track;
 
-			public bool TryGetTrack(out AudioTrack track)
+			public AudioTrack GetTrack()
 			{
 				if (library)
 				{
-					if (library.Count > 0) return track = library.GetTrack(this.track);
+					if (library.Count > 0) return library.GetTrack(track);
 					else throw new Exception($"The sound's library '{library.name}' has no tracks");
 				}
 				else if (Equals(library, null)) throw new UnassignedReferenceException("The sound's library is not assigned");

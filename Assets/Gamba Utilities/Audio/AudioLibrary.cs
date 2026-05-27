@@ -21,13 +21,13 @@ namespace GambaUtilities.Audio
 		[SerializeField]
 		[CustomName("Clip {i+1}")]
 		[Tooltip("Plays one of these clips randomly every time the track is played")]
-		private List<AudioClip> clips = new List<AudioClip>();
+		private List<AudioClip> clips;
 		[SerializeField]
 		[Range(0, 1)]
-		private float volume = 1;
+		private float volume;
 		[SerializeField]
 		[Range(-3, 3)]
-		private float pitch = 1;
+		private float pitch;
 		[SerializeField]
 		[Range(0, 1)]
 		private float spatialBlend;
@@ -46,7 +46,7 @@ namespace GambaUtilities.Audio
 			source.spatialBlend = spatialBlend;
 		}
 
-		private AudioClip GetClip()
+		public AudioClip GetClip()
 		{
 			return clips[Random.Range(0, clips.Count)];
 		}
@@ -55,7 +55,7 @@ namespace GambaUtilities.Audio
 
 		// ----------------------------------------------------------------------------------------------------
 
-		#region Other
+		#region Inspector
 
 		public void EditorUpdate(int index, AudioMixerGroup mixer)
 		{
@@ -64,8 +64,6 @@ namespace GambaUtilities.Audio
 
 			clips.ResizeMin(1);
 		}
-
-		public static implicit operator bool(AudioTrack track) => track != null;
 
 		#endregion
 

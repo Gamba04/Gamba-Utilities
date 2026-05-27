@@ -75,23 +75,27 @@ namespace GambaUtilities
 		/// <param name="customDefault"> If the list size increases, the new elements will get the value of <paramref name="customDefault"/>(). </param> 
 		public static void Resize<T>(this List<T> list, int size, Func<T> customDefault)
 		{
-			if (list.Count == size) return;
+			list ??= new List<T>(size);
+			int delta = size - list.Count;
 
-			List<T> result = new List<T>(size);
+			if (delta > 0) Add(delta);
+			else if (delta < 0) Remove(-delta);
 
-			for (int i = 0; i < size; i++)
+			void Add(int amount)
 			{
-				result.Add(i < list.Count ? list[i] : customDefault());
+				list.Capacity = size;
+
+				for (int i = 0; i < amount; i++)
+				{
+					list.Add(customDefault());
+				}
 			}
 
-			list.Replace(result);
+			void Remove(int amount)
+			{
+				list.RemoveRange(list.Count - amount, amount);
+			}
 		}
-
-		/// <summary> Gets the amount of values in <typeparamref name="E"/>. </summary>
-		public static int GetEnumLength<E>() where E : Enum => GetEnumLength(typeof(E));
-
-		/// <summary> Gets the amount of values in <paramref name="enumType"/>. </summary>
-		public static int GetEnumLength(Type enumType) => Enum.GetValues(enumType).Length;
 
 		#endregion
 
@@ -240,6 +244,33 @@ namespace GambaUtilities
 		}
 
 		#endregion
+
+		#endregion
+
+		// ----------------------------------------------------------------------------------------------------
+
+		#region Enums
+
+		/// <summary> Gets the amount of values in <typeparamref name="E"/>. </summary>
+		public static int GetEnumLength<E>() where E : Enum => GetEnumLength(typeof(E));
+
+		/// <summary> Gets the amount of values in <paramref name="enumType"/>. </summary>
+		public static int GetEnumLength(Type enumType) => Enum.GetValues(enumType).Length;
+
+		/// <summary> Indicates whether the <typeparamref name="E"/> is equal to any of these <paramref name="values"/>. </summary>
+		public static bool IsEither<E>(this E enumValue, params E[] values)
+			where E : Enum
+		{
+			foreach (E value in values)
+			{
+				if (enumValue.Equals(value))
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
 
 		#endregion
 
@@ -534,7 +565,7 @@ namespace GambaUtilities
 
 		// ----------------------------------------------------------------------------------------------------
 
-		#region Other
+		#region Objects
 
 		public static void RecordUndo(Object target, Action action, string description = "")
 		{
