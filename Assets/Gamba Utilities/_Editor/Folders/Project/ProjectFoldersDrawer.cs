@@ -18,10 +18,8 @@ namespace GambaUtilities.Editor.Folders
 		#region Folder
 
 		[Serializable]
-		private class Folder
+		private class Folder : SerializableElement
 		{
-			[SerializeField, HideInInspector]
-			private string name;
 			[SerializeField]
 			private string path;
 			[SerializeField]

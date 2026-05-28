@@ -10,10 +10,8 @@ namespace GambaUtilities
 		#region Request
 
 		[Serializable]
-		private class Request
+		private class Request : SerializableElement
 		{
-			[SerializeField, HideInInspector]
-			private string name;
 			[SerializeField]
 			private float time;
 			[SerializeField]

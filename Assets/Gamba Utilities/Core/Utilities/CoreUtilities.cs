@@ -75,7 +75,6 @@ namespace GambaUtilities
 		/// <param name="customDefault"> If the list size increases, the new elements will get the value of <paramref name="customDefault"/>(). </param> 
 		public static void Resize<T>(this List<T> list, int size, Func<T> customDefault)
 		{
-			list ??= new List<T>(size);
 			int delta = size - list.Count;
 
 			if (delta > 0) Add(delta);

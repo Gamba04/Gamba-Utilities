@@ -10,14 +10,13 @@ namespace GambaUtilities.Audio
 	#region Audio Track
 
 	[Serializable]
-	public class AudioTrack
+	public class AudioTrack : SerializableElement
 	{
 		[SerializeField, HideInInspector]
-		private string displayName;
-		[SerializeField, HideInInspector]
 		private AudioMixerGroup mixer;
+		[CustomName("Name")]
 		[SerializeField]
-		private string name;
+		private string trackName;
 		[SerializeField]
 		[CustomName("Clip {i+1}")]
 		[Tooltip("Plays one of these clips randomly every time the track is played")]
@@ -32,7 +31,19 @@ namespace GambaUtilities.Audio
 		[Range(0, 1)]
 		private float spatialBlend;
 
-		public string Name => displayName;
+		public string Name => name;
+
+		#region Init
+
+		public override void Init()
+		{
+			volume = 1;
+			pitch = 1;
+		}
+
+		#endregion
+
+		// ----------------------------------------------------------------------------------------------------
 
 		#region Setup
 
@@ -59,7 +70,7 @@ namespace GambaUtilities.Audio
 
 		public void EditorUpdate(int index, AudioMixerGroup mixer)
 		{
-			displayName = name.HasContent() ? name : $"Track {index + 1}";
+			name = trackName.HasContent() ? trackName : $"Track {index + 1}";
 			this.mixer = mixer;
 
 			clips.ResizeMin(1);
