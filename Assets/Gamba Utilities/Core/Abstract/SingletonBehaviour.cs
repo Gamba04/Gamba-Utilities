@@ -7,7 +7,7 @@ namespace GambaUtilities
 	public abstract class SingletonBehaviour<T> : MonoBehaviour
 		where T : SingletonBehaviour<T>
 	{
-		private static T instance;
+		protected static T instance;
 
 		public static T Instance => instance.ExistingObject() ?? FindInstance() ?? BuildInstance();
 
@@ -36,13 +36,15 @@ namespace GambaUtilities
 			if (instance == null)
 			{
 				instance = this as T;
-
-				Init();
 			}
 			else if (this is T && instance != this)
 			{
 				Destroy(gameObject);
+
+				return;
 			}
+
+			Init();
 		}
 
 		protected virtual void Init() { }

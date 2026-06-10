@@ -82,7 +82,7 @@ namespace GambaUtilities
 
 			void Add(int amount)
 			{
-				list.Capacity = size;
+				if (list.Capacity < size) list.Capacity = size;
 
 				for (int i = 0; i < amount; i++)
 				{

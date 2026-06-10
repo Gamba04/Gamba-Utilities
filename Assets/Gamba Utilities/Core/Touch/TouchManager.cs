@@ -11,7 +11,8 @@ namespace GambaUtilities
 	public enum TouchState
 	{
 		Hover,
-		Start,
+		HoverExit,
+		Press,
 		Hold,
 		Release,
 		Cancel
@@ -53,6 +54,8 @@ namespace GambaUtilities
 			this.deltaPosition = deltaPosition;
 		}
 
+		public static implicit operator int(GameTouch touch) => touch.id;
+
 		#endregion
 
 		// ----------------------------------------------------------------------------------------------------
@@ -61,28 +64,28 @@ namespace GambaUtilities
 
 		#region Initial
 
-		/// <summary> Retrieves a copy of the receivers overlapped at the <see cref="TouchState.Start"/> of the touch. </summary>
+		/// <summary> Retrieves a copy of the receivers overlapped at the <see cref="TouchState.Press"/> state of this touch. </summary>
 		public TouchReceiver[] GetInitialOverlaps() => activity.initial.ToArray();
 
-		/// <summary> Fills <paramref name="receivers"/> with the receivers overlapped at the <see cref="TouchState.Start"/> of the touch. </summary>
+		/// <summary> Fills <paramref name="receivers"/> with the receivers overlapped at the <see cref="TouchState.Press"/> state of this touch. </summary>
 		public void GetInitialOverlaps(List<TouchReceiver> receivers) => receivers.AddRange(activity.initial);
 
-		/// <summary> Checks whether there were any overlaps at the <see cref="TouchState.Start"/> of the touch. </summary>
+		/// <summary> Checks whether there were any overlaps at the <see cref="TouchState.Press"/> state of this touch. </summary>
 		public bool InitiallyOverlapped() => activity.initial.Count > 0;
 
-		/// <summary> Checks if <paramref name="receiver"/> was overlapped with at the <see cref="TouchState.Start"/> of the touch. </summary>
+		/// <summary> Checks if <paramref name="receiver"/> was overlapped with at the <see cref="TouchState.Press"/> state of this touch. </summary>
 		public bool InitiallyOverlapped(TouchReceiver receiver) => activity.initial.Contains(receiver);
 
-		/// <summary> Checks whether there were any overlaps with <paramref name="layer"/> at the <see cref="TouchState.Start"/> of the touch. </summary>
+		/// <summary> Checks whether there were any overlaps with <paramref name="layer"/> at the <see cref="TouchState.Press"/> state of this touch. </summary>
 		public bool InitiallyOverlapped(int layer) => InitiallyOverlapped(receiver => receiver.gameObject.layer == layer);
 
-		/// <summary> Checks whether there were any overlaps with a layer contained by <paramref name="mask"/> at the <see cref="TouchState.Start"/> of the touch. </summary>
+		/// <summary> Checks whether there were any overlaps with a layer contained by <paramref name="mask"/> at the <see cref="TouchState.Press"/> state of this touch. </summary>
 		public bool InitiallyOverlapped(LayerMask mask) => InitiallyOverlapped(receiver => mask.Contains(receiver.gameObject.layer));
 
-		/// <summary> Checks whether there were any overlaps with <typeparamref name="R"/> at the <see cref="TouchState.Start"/> of the touch. </summary>
+		/// <summary> Checks whether there were any overlaps with <typeparamref name="R"/> at the <see cref="TouchState.Press"/> state of this touch. </summary>
 		public bool InitiallyOverlapped<R>() where R : TouchReceiver => InitiallyOverlapped(receiver => receiver is R);
 
-		/// <summary> Checks whether there were any overlaps that <paramref name="match"/> the specific condition at the <see cref="TouchState.Start"/> of the touch. </summary>
+		/// <summary> Checks whether there were any overlaps that <paramref name="match"/> the specific condition at the <see cref="TouchState.Press"/> state of this touch. </summary>
 		public bool InitiallyOverlapped(Predicate<TouchReceiver> match) => activity.initial.Exists(match);
 
 		#endregion
@@ -96,6 +99,9 @@ namespace GambaUtilities
 
 		/// <summary> Fills <paramref name="receivers"/> with the currently overlapping receivers. </summary>
 		public void GetOverlaps(List<TouchReceiver> receivers) => receivers.AddRange(activity.current);
+
+		/// <summary> Checks whether there are currently any overlaps. </summary>
+		public bool IsOverlapping() => activity.current.Count > 0;
 
 		/// <summary> Checks if <paramref name="receiver"/> is currently being overlapped. </summary>
 		public bool IsOverlapping(TouchReceiver receiver) => activity.current.Contains(receiver);
@@ -129,18 +135,31 @@ namespace GambaUtilities
 		{
 			public readonly List<TouchReceiver> initial;
 			public readonly List<TouchReceiver> current;
+			public readonly List<TouchReceiver> history;
 
 			public TouchActivity(int capacity)
 			{
 				initial = new List<TouchReceiver>(capacity);
 				current = new List<TouchReceiver>(capacity);
+				history = new List<TouchReceiver>(capacity);
 			}
 
-			public void Record(TouchReceiver receiver, bool isInitial)
+			public void Clear()
 			{
-				if (isInitial) initial.Add(receiver);
+				initial.Clear();
+				current.Clear();
+				history.Clear();
+			}
+
+			public void ClearCurrent() => current.Clear();
+
+			public void Record(TouchReceiver receiver, TouchState state)
+			{
+				if (state == TouchState.Press) initial.Add(receiver);
 
 				current.Add(receiver);
+				
+				if (!history.Contains(receiver)) history.Add(receiver);
 			}
 		}
 
@@ -166,19 +185,37 @@ namespace GambaUtilities
 
 			protected override void Init()
 			{
-				touches.Capacity = maxTouches;
+				touches.Capacity = Input.touchSupported ? maxTouches : 1;
+
+				InitActivity();
+			}
+
+			private void InitActivity()
+			{
+				int capacity = FindObjectsOfType<TouchReceiver>(true).Length;
+
+				if (Input.touchSupported)
+				{
+					for (int id = 0; id < maxTouches; id++)
+					{
+						Add(id);
+					}
+				}
+				else if (Input.mousePresent) Add(-1);
+
+				void Add(int id) => activities.Add(id, new TouchActivity(capacity));
 			}
 
 			#endregion
 
 			// ----------------------------------------------------------------------------------------------------
 
-			#region Update
+			#region LateUpdate
 
-			private void Update()
+			private void LateUpdate()
 			{
 				UpdateTouches();
-				UpdateReceivers();
+				UpdateInteractions();
 			}
 
 			#endregion
@@ -202,8 +239,7 @@ namespace GambaUtilities
 
 					if (touch.IsFinished)
 					{
-						activities[touch.id].initial.Clear();
-
+						activities[touch].Clear();
 						touches.RemoveAt(i);
 					}
 				}
@@ -230,7 +266,7 @@ namespace GambaUtilities
 
 				TouchState GetState()
 				{
-					if (Input.GetMouseButtonDown(0)) return TouchState.Start;
+					if (Input.GetMouseButtonDown(0)) return TouchState.Press;
 					if (Input.GetMouseButton(0)) return TouchState.Hold;
 					if (Input.GetMouseButtonUp(0)) return TouchState.Release;
 
@@ -258,7 +294,7 @@ namespace GambaUtilities
 				{
 					return touch.phase switch
 					{
-						TouchPhase.Began => TouchState.Start,
+						TouchPhase.Began => TouchState.Press,
 						TouchPhase.Moved => TouchState.Hold,
 						TouchPhase.Stationary => TouchState.Hold,
 						TouchPhase.Ended => TouchState.Release,
@@ -299,53 +335,48 @@ namespace GambaUtilities
 
 			private void CreateTouch(int id, TouchState state, Vector2 screenPosition)
 			{
-				TouchActivity activity = GetActivity(id);
-				GameTouch touch = new GameTouch(id, state, screenPosition, activity);
+				GameTouch touch = new GameTouch(id, state, screenPosition, activities[id]);
 
 				touches.Add(touch);
-			}
-
-			private TouchActivity GetActivity(int id)
-			{
-				bool exists = activities.ContainsKey(id);
-				TouchActivity activity = exists ? activities[id] : new TouchActivity(receivers.Count);
-
-				if (!exists) activities.Add(id, activity);
-
-				return activity;
 			}
 
 			#endregion
 
 			// ----------------------------------------------------------------------------------------------------
 
-			#region Receivers
+			#region Registration
 
-			public static void Register(TouchReceiver receiver) => Instance.receivers.Add(receiver);
+			public static void Register(TouchReceiver receiver) => GetReceivers(true).Add(receiver);
 
-			public static void Unregister(TouchReceiver receiver) => Instance.receivers.Remove(receiver);
+			public static void Unregister(TouchReceiver receiver) => GetReceivers(false)?.Remove(receiver);
 
-			private void UpdateReceivers()
-			{
-				UpdateInteractions();
-				ProcessInteractions();
-			}
+			private static List<TouchReceiver> GetReceivers(bool guaranteed) => guaranteed ? Instance.receivers : instance?.ExistingObject()?.receivers;
+
+			#endregion
+
+			// ----------------------------------------------------------------------------------------------------
+
+			#region Interactions
 
 			private void UpdateInteractions()
 			{
+				RecordInteractions();
+				ProcessInteractions();
+			}
+
+			private void RecordInteractions()
+			{
 				foreach (GameTouch touch in touches)
 				{
-					TouchActivity activity = activities[touch.id];
+					TouchActivity activity = activities[touch];
 
-					activity.current.Clear();
+					activity.ClearCurrent();
 
 					foreach (TouchReceiver receiver in receivers)
 					{
-						if (receiver.Overlap(touch.screenPosition))
+						if (receiver.Validate(touch) && receiver.Overlap(touch.screenPosition))
 						{
-							bool isInitial = touch.state == TouchState.Start;
-
-							activity.Record(receiver, isInitial);
+							activity.Record(receiver, touch.state);
 						}
 					}
 				}
@@ -355,11 +386,28 @@ namespace GambaUtilities
 			{
 				foreach (GameTouch touch in touches)
 				{
-					foreach (TouchReceiver receiver in activities[touch.id].current)
+					List<TouchReceiver> history = activities[touch].history;
+
+					for (int i = history.Count - 1; i > -1; i--)
 					{
-						receiver.OnTouch(touch);
+						SendInteraction(touch, history[i], history);
 					}
 				}
+			}
+
+			private void SendInteraction(GameTouch touch, TouchReceiver receiver, List<TouchReceiver> history)
+			{
+				bool isInitial = touch.InitiallyOverlapped(receiver);
+				bool isCurrent = touch.IsOverlapping(receiver);
+
+				if (touch.state == TouchState.Hover && !isCurrent)
+				{
+					touch.state = TouchState.HoverExit;
+
+					history.Remove(receiver);
+				}
+
+				receiver.ReceiveTouch(touch, isInitial, isCurrent);
 			}
 
 			#endregion
