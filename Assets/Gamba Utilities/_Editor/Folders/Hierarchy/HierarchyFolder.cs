@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace GambaUtilities.Editor
+namespace GambaUtilities.Editor.Folders
 {
     [AddComponentMenu("​Hierarchy Folder")]
     [DisallowMultipleComponent]
