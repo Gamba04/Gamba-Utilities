@@ -1,8 +1,13 @@
 using System;
+using System.Reflection;
+using System.Text.RegularExpressions;
 using UnityEngine;
+using UnityEditor;
+using UnityEditor.Callbacks;
 using UnityDebug = UnityEngine.Debug;
+using Object = UnityEngine.Object;
 
-public static class Debug
+public class Debug : UnityDebug
 {
 
 	#region Scopes
@@ -26,7 +31,7 @@ public static class Debug
 	#region Log
 
 	/// <summary> Logs a message to the Unity Console. </summary>
-	public static void Log(object message) => Execute(message, UnityDebug.Log);
+	public static new void Log(object message) => Execute(message, UnityDebug.Log);
 
 	/// <summary> Logs a message to the Unity Console with a custom <see cref="Color"/>. </summary>
 	public static void Log(object message, Color color) => Execute(message, UnityDebug.Log, color);
@@ -37,6 +42,18 @@ public static class Debug
 	/// <summary> Logs a message to the Unity Console with a custom <see cref="Color"/> and <see cref="FontStyle"/>. </summary>
 	public static void Log(object message, Color color, FontStyle style) => Execute(message, UnityDebug.Log, color, style);
 
+	/// <summary> Logs a message to the Unity Console. </summary>
+	public static new void Log(object message, Object context) => Execute(message, message => UnityDebug.Log(message, context));
+
+	/// <summary> Logs a message to the Unity Console with a custom <see cref="Color"/>. </summary>
+	public static void Log(object message, Object context, Color color) => Execute(message, message => UnityDebug.Log(message, context), color);
+
+	/// <summary> Logs a message to the Unity Console with a custom <see cref="FontStyle"/>. </summary>
+	public static void Log(object message, Object context, FontStyle style) => Execute(message, message => UnityDebug.Log(message, context), style: style);
+
+	/// <summary> Logs a message to the Unity Console with a custom <see cref="Color"/> and <see cref="FontStyle"/>. </summary>
+	public static void Log(object message, Object context, Color color, FontStyle style) => Execute(message, message => UnityDebug.Log(message, context), color, style);
+
 	#endregion
 
 	// ----------------------------------------------------------------------------------------------------
@@ -44,7 +61,7 @@ public static class Debug
 	#region Warning
 
 	/// <summary> Logs a warning to the Unity Console. </summary>
-	public static void LogWarning(object message) => Execute(message, UnityDebug.LogWarning);
+	public static new void LogWarning(object message) => Execute(message, UnityDebug.LogWarning);
 
 	/// <summary> Logs a warning to the Unity Console with a custom <see cref="Color"/>. </summary>
 	public static void LogWarning(object message, Color color) => Execute(message, UnityDebug.LogWarning, color);
@@ -55,6 +72,18 @@ public static class Debug
 	/// <summary> Logs a warning to the Unity Console with a custom <see cref="Color"/> and <see cref="FontStyle"/>. </summary>
 	public static void LogWarning(object message, Color color, FontStyle style) => Execute(message, UnityDebug.LogWarning, color, style);
 
+	/// <summary> Logs a warning to the Unity Console. </summary>
+	public static new void LogWarning(object message, Object context) => Execute(message, message => UnityDebug.LogWarning(message, context));
+
+	/// <summary> Logs a warning to the Unity Console with a custom <see cref="Color"/>. </summary>
+	public static void LogWarning(object message, Object context, Color color) => Execute(message, message => UnityDebug.LogWarning(message, context), color);
+
+	/// <summary> Logs a warning to the Unity Console with a custom <see cref="FontStyle"/>. </summary>
+	public static void LogWarning(object message, Object context, FontStyle style) => Execute(message, message => UnityDebug.LogWarning(message, context), style: style);
+
+	/// <summary> Logs a warning to the Unity Console with a custom <see cref="Color"/> and <see cref="FontStyle"/>. </summary>
+	public static void LogWarning(object message, Object context, Color color, FontStyle style) => Execute(message, message => UnityDebug.LogWarning(message, context), color, style);
+
 	#endregion
 
 	// ----------------------------------------------------------------------------------------------------
@@ -62,7 +91,7 @@ public static class Debug
 	#region Error
 
 	/// <summary> Logs an error to the Unity Console. </summary>
-	public static void LogError(object message) => Execute(message, UnityDebug.LogError);
+	public static new void LogError(object message) => Execute(message, UnityDebug.LogError);
 
 	/// <summary> Logs an error to the Unity Console with a custom <see cref="Color"/>. </summary>
 	public static void LogError(object message, Color color) => Execute(message, UnityDebug.LogError, color);
@@ -72,6 +101,18 @@ public static class Debug
 
 	/// <summary> Logs an error to the Unity Console with a custom <see cref="Color"/> and <see cref="FontStyle"/>. </summary>
 	public static void LogError(object message, Color color, FontStyle style) => Execute(message, UnityDebug.LogError, color, style);
+
+	/// <summary> Logs an error to the Unity Console. </summary>
+	public static new void LogError(object message, Object context) => Execute(message, message => UnityDebug.LogError(message, context));
+
+	/// <summary> Logs an error to the Unity Console with a custom <see cref="Color"/>. </summary>
+	public static void LogError(object message, Object context, Color color) => Execute(message, message => UnityDebug.LogError(message, context), color);
+
+	/// <summary> Logs an error to the Unity Console with a custom <see cref="FontStyle"/>. </summary>
+	public static void LogError(object message, Object context, FontStyle style) => Execute(message, message => UnityDebug.LogError(message, context), style: style);
+
+	/// <summary> Logs an error to the Unity Console with a custom <see cref="Color"/> and <see cref="FontStyle"/>. </summary>
+	public static void LogError(object message, Object context, Color color, FontStyle style) => Execute(message, message => UnityDebug.LogError(message, context), color, style);
 
 	#endregion
 
@@ -166,3 +207,82 @@ public static class Debug
 	#endregion
 
 }
+
+#region Editor
+
+#if UNITY_EDITOR
+
+namespace GambaUtilities.Editor
+{
+	public static class ConsoleAssetRedirector
+	{
+		private const string debugPath = "Gamba Utilities/Core/Debug.cs";
+
+		[OnOpenAsset(-1)]
+		private static bool OnOpenAsset(int instanceID, int _)
+		{
+			if (Validate(instanceID, out EditorWindow console))
+			{
+				string stackTrace = GetStackTrace(console);
+
+				if (TryGetSource(stackTrace, out string path, out int line))
+				{
+					MonoScript script = AssetDatabase.LoadAssetAtPath<MonoScript>(path);
+					AssetDatabase.OpenAsset(script, line);
+
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		private static bool Validate(int instanceID, out EditorWindow console)
+		{
+			if (AssetDatabase.GetAssetPath(instanceID).EndsWith(debugPath))
+			{
+				Type type = typeof(EditorWindow).Assembly.GetType($"{nameof(UnityEditor)}.ConsoleWindow");
+				FieldInfo field = type.GetField("ms_ConsoleWindow", BindingFlags.Static | BindingFlags.NonPublic);
+
+				console = field.GetValue(null) as EditorWindow;
+
+				return console && console == EditorWindow.focusedWindow;
+			}
+
+			return console = null;
+		}
+
+		private static string GetStackTrace(EditorWindow console)
+		{
+			FieldInfo field = console.GetType().GetField("m_ActiveText", BindingFlags.Instance | BindingFlags.NonPublic);
+
+			return (string)field.GetValue(console);
+		}
+
+		private static bool TryGetSource(string stackTrace, out string path, out int line)
+		{
+			MatchCollection matches = Regex.Matches(stackTrace, @"Assets/([^:\r\n]*)\.cs:(\d+)");
+
+			foreach (Match match in matches)
+			{
+				path = $"{match.Groups[1].Value}.cs";
+
+				if (path != debugPath)
+				{
+					path = $"Assets/{path}";
+					line = int.Parse(match.Groups[2].Value);
+
+					return true;
+				}
+			}
+
+			path = default;
+			line = default;
+			return false;
+		}
+	}
+}
+
+#endif
+
+#endregion
