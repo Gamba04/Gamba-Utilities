@@ -93,6 +93,17 @@ namespace GambaUtilities.Editor
 			}
 		}
 
+		/// <summary> Finds the <see cref="SerializedProperty"/> at a relative path adjacent to the current property. </summary>
+		public static SerializedProperty FindSiblingProperty(this SerializedProperty property, string relativePropertyPath)
+		{
+			int index = property.propertyPath.LastIndexOf('.');
+			string path = index > -1 ? GetNestedPath() : relativePropertyPath;
+
+			return property.serializedObject.FindProperty(path);
+
+			string GetNestedPath() => $"{property.propertyPath.Substring(0, index)}.{relativePropertyPath}";
+		}
+
 		#endregion
 
 		// ----------------------------------------------------------------------------------------------------

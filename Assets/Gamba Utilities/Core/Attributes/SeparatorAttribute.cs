@@ -4,7 +4,7 @@ using UnityEditor;
 
 namespace GambaUtilities
 {
-	/// <summary> Add a separator line between fields in the Inspector. </summary>
+	/// <summary> Adds a separator line between fields in the Inspector. </summary>
 	[AttributeUsage(AttributeTargets.Field, AllowMultiple = true)]
 	public class SeparatorAttribute : PropertyAttribute
 	{
@@ -17,6 +17,8 @@ namespace GambaUtilities
 			order = -1;
 		}
 	}
+
+	#region Editor
 
 #if UNITY_EDITOR
 
@@ -52,5 +54,7 @@ namespace GambaUtilities
 	}
 
 #endif
+
+	#endregion
 
 }

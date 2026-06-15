@@ -5,9 +5,9 @@ using UnityEditor;
 
 namespace GambaUtilities
 {
-	/// <summary> Modify the field's display name with custom text in the Inspector. </summary>
+	/// <summary> Modifies the field's display name with custom text in the Inspector. </summary>
 	/// <remarks>
-	///		You may use the following macros to insert specific data in the name:
+	///		You may use the following macros to insert specific values in the name:
 	///		<code>
 	///			{name} : Original display name of the field
 	///			{var}  : Actual name of the field
@@ -24,7 +24,9 @@ namespace GambaUtilities
 		public CustomNameAttribute(string name) => this.name = name;
 	}
 
-#if UNITY_EDITOR 
+	#region Editor
+
+#if UNITY_EDITOR
 
 	namespace Editor
 	{
@@ -69,7 +71,9 @@ namespace GambaUtilities
 			}
 		}
 	}
-		
+
 #endif
+
+	#endregion
 
 }

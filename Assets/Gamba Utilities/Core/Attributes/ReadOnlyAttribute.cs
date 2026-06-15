@@ -4,8 +4,8 @@ using UnityEditor;
 
 namespace GambaUtilities
 {
-	/// <summary> Restrict editing of the field in the Inspector. </summary>
-	/// <remarks> Does not work for children inside Serializable types. </remarks>
+	/// <summary> Restricts editing the field in the Inspector. </summary>
+	/// <remarks> Does not work properly for children inside Serializable types. </remarks>
 	[AttributeUsage(AttributeTargets.Field)]
 	public class ReadOnlyAttribute : PropertyAttribute
 	{
@@ -23,6 +23,8 @@ namespace GambaUtilities
 
 		public void Toggle() => Editable = !Editable;
 	}
+
+	#region Editor
 
 #if UNITY_EDITOR
 
@@ -55,5 +57,7 @@ namespace GambaUtilities
 	}
 
 #endif
+
+	#endregion
 
 }

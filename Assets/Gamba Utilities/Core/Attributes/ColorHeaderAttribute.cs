@@ -4,7 +4,7 @@ using UnityEditor;
 
 namespace GambaUtilities
 {
-	/// <summary> Add a custom color header in the Inspector. </summary>
+	/// <summary> Adds a custom colored header in the Inspector. </summary>
 	[AttributeUsage(AttributeTargets.Field, AllowMultiple = true)]
 	public class ColorHeaderAttribute : HeaderAttribute
 	{
@@ -21,6 +21,8 @@ namespace GambaUtilities
 
 		private static Color? ParseColor(string hex) => ColorUtility.TryParseHtmlString(hex, out Color color) ? color : (Color?)null;
 	}
+
+	#region Editor
 
 #if UNITY_EDITOR
 
@@ -46,5 +48,7 @@ namespace GambaUtilities
 	}
 
 #endif
+
+	#endregion
 
 }
