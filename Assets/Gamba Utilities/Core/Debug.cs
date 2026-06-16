@@ -156,11 +156,11 @@ public class Debug : UnityDebug
 
 	private static bool IsValid()
 	{
-		bool isValid = enabled;
+		bool isValid = enabled
 
-		isValid &= scope.HasFlag(Scope.Editor) || !Application.isEditor;
-		isValid &= scope.HasFlag(Scope.DevelopmentBuild) || !UnityDebug.isDebugBuild;
-		isValid &= scope.HasFlag(Scope.ReleaseBuild) || Application.isEditor || UnityDebug.isDebugBuild;
+		&& (scope.HasFlag(Scope.ReleaseBuild) || Application.isEditor || isDebugBuild)
+		&& (scope.HasFlag(Scope.DevelopmentBuild) || !isDebugBuild)
+		&& (scope.HasFlag(Scope.Editor) || !Application.isEditor);
 
 		return isValid;
 	}

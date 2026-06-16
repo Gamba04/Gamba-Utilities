@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Diagnostics;
 using System.Reflection;
 using UnityEngine;
 using UnityEditor;
@@ -6,6 +7,10 @@ using UnityEditor;
 namespace GambaUtilities
 {
 	/// <summary> Hides the readonly Script field at the beginning of the <see cref="MonoBehaviour"/> in the Inspector. </summary>
+	/// <remarks>
+	///		You may also define a custom scripting symbol as <c>HIDE_MONOSCRIPT</c> to apply this feature to the entire project.<br/><br/>
+	///		Custom scripting symbols can be defined from <b>Project Settings → Player → Other Settings → Script Compilation</b>.
+	/// </remarks>
 	[AttributeUsage(AttributeTargets.Class, Inherited = true)]
 	public class HideMonoScriptAttribute : Attribute { }
 
@@ -31,7 +36,15 @@ namespace GambaUtilities
 
 			private void OnEnable()
 			{
-				hideMonoScript = target.GetType().GetCustomAttribute<HideMonoScriptAttribute>(true) != null;
+				ApplyDefinedSymbol();
+
+				hideMonoScript = hideMonoScript || target.GetType().GetCustomAttribute<HideMonoScriptAttribute>(true) != null;
+			}
+
+			[Conditional("HIDE_MONOSCRIPT")]
+			private void ApplyDefinedSymbol()
+			{
+				hideMonoScript = true;
 			}
 
 			public override void OnInspectorGUI()
