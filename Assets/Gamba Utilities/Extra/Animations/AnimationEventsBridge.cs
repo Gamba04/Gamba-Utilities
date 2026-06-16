@@ -4,6 +4,8 @@ using UnityEngine.Events;
 
 namespace GambaUtilities
 {
+	[DisallowMultipleComponent]
+	[HideMonoScript]
 	public class AnimationEventsBridge : MonoBehaviour
 	{
 		[SerializeField]

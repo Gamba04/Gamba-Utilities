@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace GambaUtilities.Audio
 {
+	[HideMonoScript]
 	public class AudioPlayer : SingletonBehaviour<AudioPlayer>
 	{
 		[SerializeField]

@@ -11,6 +11,7 @@ namespace GambaUtilities.Editor.Folders
 {
 	[InitializeOnLoad]
 	[CreateAssetMenu(fileName = name, menuName = CoreUtilities.scriptableRoot + name)]
+	[HideMonoScript]
 	public class ProjectFoldersDrawer : ScriptableObject
 	{
 		private new const string name = "Project Folders";

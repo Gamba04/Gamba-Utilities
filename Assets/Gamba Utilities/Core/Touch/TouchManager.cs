@@ -168,6 +168,8 @@ namespace GambaUtilities
 
 		#endregion
 
+		[DisallowMultipleComponent]
+		[HideMonoScript]
 		public class TouchManager : SingletonBehaviour<TouchManager>
 		{
 			[Header("Settings")]

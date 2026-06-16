@@ -9,6 +9,7 @@ namespace GambaUtilities.UI
 {
 	[SelectionBase]
 	[DisallowMultipleComponent]
+	[HideMonoScript]
 	public class Button : TouchReceiver
 	{
 

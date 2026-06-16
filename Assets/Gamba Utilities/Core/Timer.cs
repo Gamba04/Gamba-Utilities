@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace GambaUtilities
 {
+	[HideMonoScript]
 	public class Timer : SingletonBehaviour<Timer>
 	{
 

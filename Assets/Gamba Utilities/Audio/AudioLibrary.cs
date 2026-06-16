@@ -84,6 +84,7 @@ namespace GambaUtilities.Audio
 	#endregion
 
 	[CreateAssetMenu(fileName = name, menuName = CoreUtilities.scriptableRoot + name)]
+	[HideMonoScript]
 	public class AudioLibrary : ScriptableObject
 	{
 		private new const string name = "Audio Library";

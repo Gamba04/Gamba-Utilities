@@ -3,6 +3,8 @@ using UnityEngine;
 
 namespace GambaUtilities
 {
+	[DisallowMultipleComponent]
+	[HideMonoScript]
 	public class AnimationSoundPlayer : MonoBehaviour
 	{
 		[SerializeField]

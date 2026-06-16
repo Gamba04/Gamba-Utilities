@@ -261,7 +261,7 @@ namespace GambaUtilities.Editor
 
 		private static bool TryGetSource(string stackTrace, out string path, out int line)
 		{
-			MatchCollection matches = Regex.Matches(stackTrace, @"Assets/([^:\r\n]*)\.cs:(\d+)");
+			MatchCollection matches = Regex.Matches(stackTrace, @"Assets/([^:\n]*)\.cs:(\d+)");
 
 			foreach (Match match in matches)
 			{

@@ -4,6 +4,7 @@ namespace GambaUtilities.Editor.Folders
 {
     [AddComponentMenu("​Hierarchy Folder")]
     [DisallowMultipleComponent]
+    [HideMonoScript]
     public class HierarchyFolder : MonoBehaviour
     {
         [SerializeField]

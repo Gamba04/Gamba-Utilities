@@ -2,6 +2,8 @@ using UnityEngine;
 
 namespace GambaUtilities
 {
+	[DisallowMultipleComponent]
+	[HideMonoScript]
 	public class VSync : MonoBehaviour
 	{
 		[SerializeField]
