@@ -38,7 +38,7 @@ namespace GambaUtilities
 
 			public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
 			{
-				return IsVisible(property) ? EditorGUIUtility.singleLineHeight : 0;
+				return IsVisible(property) ? EditorGUIUtility.singleLineHeight : -2;
 			}
 
 			public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)

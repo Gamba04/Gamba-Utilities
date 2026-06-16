@@ -5,7 +5,7 @@ namespace GambaUtilities
 {
 	using Internal;
 
-	#region MultiTransition
+	#region Multi Transition
 
 	namespace Internal
 	{
@@ -22,11 +22,11 @@ namespace GambaUtilities
 			#region Start
 
 			protected void StartTransition<T>(Transition<T> transition, T target, bool isUnscaled, bool isReversed, ref Action onTransitionEnd)
-				where T : struct
+				where T : struct, IEquatable<T>
 			{
 				if (duration > 0)
 				{
-					if (!transition.Value.Equals(target))
+					if (!transition.value.Equals(target))
 					{
 						referenceTransition = transition;
 
@@ -36,7 +36,7 @@ namespace GambaUtilities
 				}
 				else
 				{
-					transition.Value = target;
+					transition.value = target;
 
 					onTransitionEnd?.Invoke();
 					onTransitionEnd = null;
@@ -50,7 +50,7 @@ namespace GambaUtilities
 			#region Update
 
 			protected void UpdateTransition<T>(Transition<T> transition, ref bool updateValue, out T value)
-				where T : struct
+				where T : struct, IEquatable<T>
 			{
 				transition.duration = duration;
 				transition.curve = curve;
@@ -83,15 +83,15 @@ namespace GambaUtilities
 
 	[Serializable]
 	public class Transition<A, B> : MultiTransition
-		where A : struct
-		where B : struct
+		where A : struct, IEquatable<A>
+		where B : struct, IEquatable<B>
 	{
 		private readonly Transition<A> transitionA = new Transition<A>();
 		private readonly Transition<B> transitionB = new Transition<B>();
 
-		public A ValueA { get => transitionA.Value; set => transitionA.Value = value; }
+		public A ValueA { get => transitionA.value; set => transitionA.value = value; }
 
-		public B ValueB { get => transitionB.Value; set => transitionB.Value = value; }
+		public B ValueB { get => transitionB.value; set => transitionB.value = value; }
 
 		protected override List<TransitionBase> Transitions => new List<TransitionBase>()
 		{
@@ -159,19 +159,19 @@ namespace GambaUtilities
 
 	[Serializable]
 	public class Transition<A, B, C> : MultiTransition
-		where A : struct
-		where B : struct
-		where C : struct
+		where A : struct, IEquatable<A>
+		where B : struct, IEquatable<B>
+		where C : struct, IEquatable<C>
 	{
 		private readonly Transition<A> transitionA = new Transition<A>();
 		private readonly Transition<B> transitionB = new Transition<B>();
 		private readonly Transition<C> transitionC = new Transition<C>();
 
-		public A ValueA { get => transitionA.Value; set => transitionA.Value = value; }
+		public A ValueA { get => transitionA.value; set => transitionA.value = value; }
 
-		public B ValueB { get => transitionB.Value; set => transitionB.Value = value; }
+		public B ValueB { get => transitionB.value; set => transitionB.value = value; }
 
-		public C ValueC { get => transitionC.Value; set => transitionC.Value = value; }
+		public C ValueC { get => transitionC.value; set => transitionC.value = value; }
 
 		protected override List<TransitionBase> Transitions => new List<TransitionBase>()
 		{
@@ -243,23 +243,23 @@ namespace GambaUtilities
 
 	[Serializable]
 	public class Transition<A, B, C, D> : MultiTransition
-		where A : struct
-		where B : struct
-		where C : struct
-		where D : struct
+		where A : struct, IEquatable<A>
+		where B : struct, IEquatable<B>
+		where C : struct, IEquatable<C>
+		where D : struct, IEquatable<D>
 	{
 		private readonly Transition<A> transitionA = new Transition<A>();
 		private readonly Transition<B> transitionB = new Transition<B>();
 		private readonly Transition<C> transitionC = new Transition<C>();
 		private readonly Transition<D> transitionD = new Transition<D>();
 
-		public A ValueA { get => transitionA.Value; set => transitionA.Value = value; }
+		public A ValueA { get => transitionA.value; set => transitionA.value = value; }
 
-		public B ValueB { get => transitionB.Value; set => transitionB.Value = value; }
+		public B ValueB { get => transitionB.value; set => transitionB.value = value; }
 
-		public C ValueC { get => transitionC.Value; set => transitionC.Value = value; }
+		public C ValueC { get => transitionC.value; set => transitionC.value = value; }
 
-		public D ValueD { get => transitionD.Value; set => transitionD.Value = value; }
+		public D ValueD { get => transitionD.value; set => transitionD.value = value; }
 
 		protected override List<TransitionBase> Transitions => new List<TransitionBase>()
 		{

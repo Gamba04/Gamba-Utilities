@@ -10,6 +10,7 @@ namespace GambaUtilities
 
 	public enum TouchState
 	{
+		HoverEnter,
 		Hover,
 		HoverExit,
 		Press,
@@ -32,6 +33,8 @@ namespace GambaUtilities
 		private readonly TouchActivity activity;
 
 		public bool IsMouse => id == -1;
+
+		public bool IsHover => state < TouchState.Press;
 
 		public bool IsFinished => state > TouchState.Hold;
 
@@ -159,7 +162,7 @@ namespace GambaUtilities
 
 				current.Add(receiver);
 				
-				if (!history.Contains(receiver)) history.Add(receiver);
+				if (state == TouchState.Hover || !history.Contains(receiver)) history.Add(receiver);
 			}
 		}
 
@@ -390,24 +393,47 @@ namespace GambaUtilities
 
 					for (int i = history.Count - 1; i > -1; i--)
 					{
-						SendInteraction(touch, history[i], history);
+						SendInteraction(touch, history, ref i);
 					}
 				}
 			}
 
-			private void SendInteraction(GameTouch touch, TouchReceiver receiver, List<TouchReceiver> history)
+			private static void SendInteraction(GameTouch touch, List<TouchReceiver> history, ref int index)
 			{
+				TouchReceiver receiver = history[index];
+
 				bool isInitial = touch.InitiallyOverlapped(receiver);
 				bool isCurrent = touch.IsOverlapping(receiver);
 
-				if (touch.state == TouchState.Hover && !isCurrent)
-				{
-					touch.state = TouchState.HoverExit;
-
-					history.Remove(receiver);
-				}
+				if (touch.IsHover) ProcessHoverInteraction(isCurrent, receiver, history, ref index, ref touch.state);
 
 				receiver.ReceiveTouch(touch, isInitial, isCurrent);
+			}
+
+			private static void ProcessHoverInteraction(bool isCurrent, TouchReceiver receiver, List<TouchReceiver> history, ref int index, ref TouchState state)
+			{
+				if (isCurrent)
+				{
+					if (TryGetDuplicate(receiver, history, index, out int duplicate))
+					{
+						history.RemoveAt(duplicate);
+						index--;
+					}
+					else state = TouchState.HoverEnter;
+				}
+				else
+				{
+					state = TouchState.HoverExit;
+
+					history.RemoveAt(index);
+				}
+			}
+
+			private static bool TryGetDuplicate(TouchReceiver receiver, List<TouchReceiver> history, int index, out int duplicate)
+			{
+				duplicate = history.IndexOf(receiver);
+
+				return duplicate < index;
 			}
 
 			#endregion

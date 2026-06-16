@@ -4,6 +4,7 @@ namespace GambaUtilities
 {
 	using Internal;
 
+	/// <summary> Base class for detection of mouse or touch interactions. </summary>
 	public abstract class TouchReceiver : MonoBehaviour
 	{
 		private int? currentTouch;
@@ -92,6 +93,10 @@ namespace GambaUtilities
 
 		/// <summary> Assumes that <see cref="Component.transform"/> is a <see cref="RectTransform"/> and checks if it is overlapped by <paramref name="screenPosition"/>. </summary>
 		protected bool OverlapUI(Vector2 screenPosition) => OverlapUI(screenPosition, (RectTransform)transform);
+
+		/// <summary> Assumes that <see cref="Component.transform"/> is a <see cref="RectTransform"/> and checks if it is overlapped by <paramref name="screenPosition"/>. </summary>
+		/// <param name="canvas"> Custom canvas to be based on. </param>
+		protected bool OverlapUI(Vector2 screenPosition, Canvas canvas) => OverlapUI(screenPosition, (RectTransform)transform, canvas);
 
 		/// <summary> Checks if <paramref name="rectTransform"/> is overlapped by <paramref name="screenPosition"/>. </summary>
 		protected bool OverlapUI(Vector2 screenPosition, RectTransform rectTransform) => rectTransform.ContainsScreenPoint(screenPosition);

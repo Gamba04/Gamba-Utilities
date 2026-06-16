@@ -14,6 +14,7 @@ namespace GambaUtilities.Audio
 	{
 		[SerializeField, HideInInspector]
 		private AudioMixerGroup mixer;
+
 		[CustomName("Name")]
 		[SerializeField]
 		private string trackName;

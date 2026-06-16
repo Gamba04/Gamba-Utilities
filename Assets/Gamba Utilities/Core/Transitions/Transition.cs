@@ -6,13 +6,13 @@ namespace GambaUtilities
 {
 	using Internal;
 
-	#region TransitionBase
+	#region Transition Base
 
 	namespace Internal
 	{
 		public abstract class TransitionBase
 		{
-			[Range(0, 5)]
+			[Min(0)]
 			public float duration = 1;
 			public AnimationCurve curve = new AnimationCurve(new Keyframe(0, 0), new Keyframe(1, 1));
 
@@ -44,9 +44,10 @@ namespace GambaUtilities
 
 	[Serializable]
 	public class Transition<T> : TransitionBase
-		where T : struct
+		where T : struct, IEquatable<T>
 	{
-		private T value;
+		[ShowIf(false)]
+		public T value;
 
 		private T startValue;
 		private T targetValue;
@@ -66,8 +67,6 @@ namespace GambaUtilities
 		public override float Time => time;
 
 		public override bool IsInTransition => isInTransition;
-
-		public T Value { get => value; set => this.value = value; }
 
 		#region Start
 
@@ -138,41 +137,59 @@ namespace GambaUtilities
 
 		private delegate L LerpFunction<L>(L a, L b, float t);
 
+		private static LerpFunction<T> lerp;
+
 		private bool Lerp(float interpolator)
 		{
-			bool success = false;
+			bool success = TryLerpCached()
 
-			TryLerp<float>(Mathf.LerpUnclamped);
-			TryLerp<Vector2>(Vector2.LerpUnclamped);
-			TryLerp<Vector3>(Vector3.LerpUnclamped);
-			TryLerp<Vector4>(Vector4.LerpUnclamped);
-			TryLerp<Quaternion>(Quaternion.SlerpUnclamped);
-			TryLerp<Color>(Color.LerpUnclamped);
-			TryLerpTransitionable();
+			|| TryLerp<float>(Mathf.LerpUnclamped)
+			|| TryLerp<Vector2>(Vector2.LerpUnclamped)
+			|| TryLerp<Vector3>(Vector3.LerpUnclamped)
+			|| TryLerp<Vector4>(Vector4.LerpUnclamped)
+			|| TryLerp<Quaternion>(Quaternion.SlerpUnclamped)
+			|| TryLerp<Color>(Color.LerpUnclamped)
+			|| TryLerpTransitionable();
 
 			return success;
 
-			void TryLerp<L>(LerpFunction<L> lerp)
+			bool TryLerpCached()
 			{
-				if (!success && typeof(L).IsAssignableFrom(typeof(T)))
-				{
-					L start = (L)(object)startValue;
-					L target = (L)(object)targetValue;
+				bool isCached = lerp != null;
 
-					value = (T)(object)lerp(start, target, interpolator);
+				if (isCached) value = lerp(startValue, targetValue, interpolator);
 
-					success = true;
-				}
+				return isCached;
 			}
 
-			void TryLerpTransitionable()
+			bool TryLerp<L>(LerpFunction<L> function)
 			{
-				if (!success && default(T) is ITransitionable<T> transitionable)
+				if (typeof(L) == typeof(T))
 				{
-					value = transitionable.Lerp(startValue, targetValue, interpolator);
+					Lerp((LerpFunction<T>)(object)function);
 
-					success = true;
+					return true;
 				}
+
+				return false;
+			}
+
+			bool TryLerpTransitionable()
+			{
+				if (default(T) is ITransitionable<T> transitionable)
+				{
+					Lerp(transitionable.Lerp);
+
+					return true;
+				}
+
+				return false;
+			}
+
+			void Lerp(LerpFunction<T> function)
+			{
+				lerp = function;
+				value = lerp(startValue, targetValue, interpolator);
 			}
 		}
 

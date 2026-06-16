@@ -188,8 +188,7 @@ namespace GambaUtilities.Editor
 				MatchType.Any => Regex.Matches(path, search).Cast<Match>().Select(match => match.Index).ToList(),
 				MatchType.StartsWith => GetIndexIf(path.StartsWith(search), 0),
 				MatchType.EndsWith => GetIndexIf(path.EndsWith(search), path.Length - search.Length),
-
-				_ => throw new InvalidCastException($"The enum value {(int)matchType} is not a valid {nameof(MatchType)}")
+				_ => throw new InvalidCastException()
 			};
 
 			for (int i = indices.Count - 1; i > -1; i--)

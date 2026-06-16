@@ -47,6 +47,10 @@ namespace GambaUtilities
 
 		public static Vector3 GetScale2D(float size) => new Vector3(size, size, 1);
 
+		public static Vector3 GetScale2D(this Vector2 scale) => scale.WithDepth(1);
+
+		public static Vector3 WithDepth(this Vector2 vector, float depth) => new Vector3(vector.x, vector.y, depth);
+
 		/// <param name="angle"> Polar angle in radians. </param>
 		public static Vector2 GetDirection(float angle) => new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
 
