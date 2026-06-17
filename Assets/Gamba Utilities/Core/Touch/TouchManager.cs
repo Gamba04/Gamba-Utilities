@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace GambaUtilities
@@ -89,7 +90,7 @@ namespace GambaUtilities
 		public bool InitiallyOverlapped<R>() where R : TouchReceiver => InitiallyOverlapped(receiver => receiver is R);
 
 		/// <summary> Checks whether there were any overlaps that <paramref name="match"/> the specific condition at the <see cref="TouchState.Press"/> state of this touch. </summary>
-		public bool InitiallyOverlapped(Predicate<TouchReceiver> match) => activity.initial.Exists(match);
+		public bool InitiallyOverlapped(Predicate<TouchReceiver> match) => activity.initial.Any(match.Invoke);
 
 		#endregion
 
@@ -119,7 +120,7 @@ namespace GambaUtilities
 		public bool IsOverlapping<R>() where R : TouchReceiver => IsOverlapping(receiver => receiver is R);
 
 		/// <summary> Checks whether there are currently any overlaps that <paramref name="match"/> the specific condition. </summary>
-		public bool IsOverlapping(Predicate<TouchReceiver> match) => activity.current.Exists(match);
+		public bool IsOverlapping(Predicate<TouchReceiver> match) => activity.current.Any(match.Invoke);
 
 		#endregion
 
@@ -134,35 +135,46 @@ namespace GambaUtilities
 
 		#region Touch Activity
 
-		public struct TouchActivity
+		public readonly struct TouchActivity
 		{
-			public readonly List<TouchReceiver> initial;
-			public readonly List<TouchReceiver> current;
-			public readonly List<TouchReceiver> history;
+			public readonly HashSet<TouchReceiver> current;
+			public readonly HashSet<TouchReceiver> history;
+			public readonly HashSet<TouchReceiver> hovered;
+			public readonly HashSet<TouchReceiver> initial;
 
 			public TouchActivity(int capacity)
 			{
-				initial = new List<TouchReceiver>(capacity);
-				current = new List<TouchReceiver>(capacity);
-				history = new List<TouchReceiver>(capacity);
+				TouchReceiver[] collection = new TouchReceiver[capacity];
+
+				current = new HashSet<TouchReceiver>(collection);
+				history = new HashSet<TouchReceiver>(collection);
+				hovered = new HashSet<TouchReceiver>(collection);
+				initial = new HashSet<TouchReceiver>(collection);
+
+				Clear();
 			}
 
 			public void Clear()
 			{
-				initial.Clear();
 				current.Clear();
 				history.Clear();
+				hovered.Clear();
+				initial.Clear();
 			}
 
-			public void ClearCurrent() => current.Clear();
+			public void ClearFrame(TouchState state)
+			{
+				current.Clear();
+
+				if (state == TouchState.Press) hovered.Clear();
+			}
 
 			public void Record(TouchReceiver receiver, TouchState state)
 			{
-				if (state == TouchState.Press) initial.Add(receiver);
-
 				current.Add(receiver);
-				
-				if (state == TouchState.Hover || !history.Contains(receiver)) history.Add(receiver);
+				history.Add(receiver);
+
+				if (state == TouchState.Press) initial.Add(receiver);
 			}
 		}
 
@@ -181,23 +193,30 @@ namespace GambaUtilities
 			[ReadOnly, SerializeField]
 			private List<GameTouch> touches = new List<GameTouch>();
 
-			private Vector2 lastMousePosition;
-
 			private readonly List<TouchReceiver> receivers = new List<TouchReceiver>();
-			private readonly Dictionary<int, TouchActivity> activities = new Dictionary<int, TouchActivity>();
+			private readonly List<TouchReceiver> historyBuffer = new List<TouchReceiver>();
+
+			private Dictionary<int, TouchActivity> activities;
+
+			private Vector2 lastMousePosition;
 
 			#region Init
 
 			protected override void Init()
 			{
-				touches.Capacity = Input.touchSupported ? maxTouches : 1;
+				int maxTouches = Input.touchSupported ? this.maxTouches : Input.mousePresent ? 1 : 0;
+				int maxReceivers = FindObjectsOfType<TouchReceiver>(true).Length;
 
-				InitActivity();
+				touches.Capacity = maxTouches;
+				receivers.Capacity = maxReceivers;
+				historyBuffer.Capacity = maxReceivers;
+
+				InitActivities(maxTouches, maxReceivers);
 			}
 
-			private void InitActivity()
+			private void InitActivities(int maxTouches, int maxReceivers)
 			{
-				int capacity = FindObjectsOfType<TouchReceiver>(true).Length;
+				activities = new Dictionary<int, TouchActivity>(maxTouches);
 
 				if (Input.touchSupported)
 				{
@@ -208,7 +227,7 @@ namespace GambaUtilities
 				}
 				else if (Input.mousePresent) Add(-1);
 
-				void Add(int id) => activities.Add(id, new TouchActivity(capacity));
+				void Add(int id) => activities.Add(id, new TouchActivity(maxReceivers));
 			}
 
 			#endregion
@@ -355,7 +374,7 @@ namespace GambaUtilities
 
 			public static void Unregister(TouchReceiver receiver) => GetReceivers(false)?.Remove(receiver);
 
-			private static List<TouchReceiver> GetReceivers(bool guaranteed) => guaranteed ? Instance.receivers : instance?.ExistingObject()?.receivers;
+			private static List<TouchReceiver> GetReceivers(bool guaranteed) => guaranteed ? Instance.receivers : instance.ExistingObject()?.receivers;
 
 			#endregion
 
@@ -375,7 +394,7 @@ namespace GambaUtilities
 				{
 					TouchActivity activity = activities[touch];
 
-					activity.ClearCurrent();
+					activity.ClearFrame(touch.state);
 
 					foreach (TouchReceiver receiver in receivers)
 					{
@@ -391,51 +410,48 @@ namespace GambaUtilities
 			{
 				foreach (GameTouch touch in touches)
 				{
-					List<TouchReceiver> history = activities[touch].history;
+					TouchActivity activity = activities[touch];
 
-					for (int i = history.Count - 1; i > -1; i--)
+					HashSet<TouchReceiver> history = activity.history;
+					HashSet<TouchReceiver> hovered = activity.hovered;
+
+					historyBuffer.Replace(history);
+
+					foreach (TouchReceiver receiver in historyBuffer)
 					{
-						SendInteraction(touch, history, ref i);
+						SendInteraction(touch, receiver, history, hovered);
 					}
 				}
 			}
 
-			private static void SendInteraction(GameTouch touch, List<TouchReceiver> history, ref int index)
+			private static void SendInteraction(GameTouch touch, TouchReceiver receiver, HashSet<TouchReceiver> history, HashSet<TouchReceiver> hovered)
 			{
-				TouchReceiver receiver = history[index];
-
 				bool isInitial = touch.InitiallyOverlapped(receiver);
 				bool isCurrent = touch.IsOverlapping(receiver);
 
-				if (touch.IsHover) ProcessHoverInteraction(isCurrent, receiver, history, ref index, ref touch.state);
+				if (touch.state <= TouchState.Press) ProcessHoverInteraction(isCurrent, receiver, history, hovered, ref touch.state);
 
 				receiver.ReceiveTouch(touch, isInitial, isCurrent);
 			}
 
-			private static void ProcessHoverInteraction(bool isCurrent, TouchReceiver receiver, List<TouchReceiver> history, ref int index, ref TouchState state)
+			private static void ProcessHoverInteraction(bool isCurrent, TouchReceiver receiver, HashSet<TouchReceiver> history, HashSet<TouchReceiver> hovered, ref TouchState state)
 			{
 				if (isCurrent)
 				{
-					if (TryGetDuplicate(receiver, history, index, out int duplicate))
+					if (state == TouchState.Hover && !hovered.Contains(receiver))
 					{
-						history.RemoveAt(duplicate);
-						index--;
+						hovered.Add(receiver);
+
+						state = TouchState.HoverEnter;
 					}
-					else state = TouchState.HoverEnter;
 				}
 				else
 				{
+					history.Remove(receiver);
+					hovered.Remove(receiver);
+
 					state = TouchState.HoverExit;
-
-					history.RemoveAt(index);
 				}
-			}
-
-			private static bool TryGetDuplicate(TouchReceiver receiver, List<TouchReceiver> history, int index, out int duplicate)
-			{
-				duplicate = history.IndexOf(receiver);
-
-				return duplicate < index;
 			}
 
 			#endregion
