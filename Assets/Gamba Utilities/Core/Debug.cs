@@ -2,8 +2,6 @@ using System;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using UnityEngine;
-using UnityEditor;
-using UnityEditor.Callbacks;
 using UnityDebug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
 
@@ -214,6 +212,9 @@ public class Debug : UnityDebug
 
 namespace GambaUtilities.Editor
 {
+	using UnityEditor;
+	using UnityEditor.Callbacks;
+
 	public static class ConsoleAssetRedirector
 	{
 		private const string debugPath = "Gamba Utilities/Core/Debug.cs";
