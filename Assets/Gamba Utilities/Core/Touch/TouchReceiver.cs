@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GambaUtilities
@@ -7,11 +8,34 @@ namespace GambaUtilities
 	/// <summary> Base class for detection of mouse or touch interactions. </summary>
 	public abstract class TouchReceiver : MonoBehaviour
 	{
-		private int? currentTouch;
+		private sbyte? currentTouch;
+		private HashSet<sbyte> discarded;
 
 		/// <summary> Allow multiple touches to interact with this object simultaneously. </summary>
 		/// <remarks> For single-touch systems such as buttons, it is recommended to leave this as default. </remarks>
 		protected virtual bool MultiTouch => false;
+
+		#region Init
+
+		private void Start()
+		{
+			InitDiscarded();
+			Init();
+		}
+
+		private void InitDiscarded()
+		{
+			int capacity = TouchManager.MaxTouches;
+
+			discarded = new HashSet<sbyte>(new sbyte[capacity]);
+			discarded.Clear();
+		}
+
+		protected virtual void Init() { }
+
+		#endregion
+
+		// ----------------------------------------------------------------------------------------------------
 
 		#region Registration
 
@@ -25,27 +49,32 @@ namespace GambaUtilities
 
 		#region Interactions
 
+		public void PreValidate(GameTouch touch)
+		{
+			if (touch.IsFinished)
+			{
+				discarded.Remove(touch);
+			}
+		}
+
 		/// <summary> Checks if the object is currently available for interactions. </summary>
-		/// <remarks> Default implementation contains single-touch validation. </remarks>
+		/// <remarks> Default implementation contains single-touch and discard validations. </remarks>
 		public virtual bool Validate(GameTouch touch)
 		{
-			if (!MultiTouch)
-			{
-				if (currentTouch == touch || !currentTouch.HasValue)
-				{
-					currentTouch = !touch.IsFinished ? touch : (int?)null;
+			return ValidateSingleTouch() && ValidateDiscard();
 
-					return true;
-				}
+			bool ValidateSingleTouch() => MultiTouch || !currentTouch.HasValue || currentTouch == touch;
 
-				return false;
-			}
-
-			return true;
+			bool ValidateDiscard() => !discarded.Contains(touch);
 		}
 
 		/// <summary> Checks if the object is overlapped by <paramref name="screenPosition"/>. </summary>
 		public abstract bool Overlap(Vector2 screenPosition);
+
+		public void PreReceiveTouch(GameTouch touch)
+		{
+			currentTouch = !touch.IsFinished ? touch : (sbyte?)null;
+		}
 
 		/// <summary> Receives an update of a <paramref name="touch"/> that is currently or has interacted with this object. </summary>
 		/// <param name="isInitial"> Indicates whether this object was overlapped by the <paramref name="touch"/> when it was initially pressed (if it has been). </param>
@@ -56,7 +85,9 @@ namespace GambaUtilities
 
 		// ----------------------------------------------------------------------------------------------------
 
-		#region Overlap Utilities
+		#region Utilities
+
+		#region Overlap
 
 		/// <summary> Checks if <paramref name="collider"/> is overlapped by the world-converted <paramref name="screenPosition"/>. </summary>
 		protected bool Overlap2D(Vector2 screenPosition, Collider2D collider) => Overlap2D(screenPosition, collider, Camera.main);
@@ -118,6 +149,22 @@ namespace GambaUtilities
 
 			return collider.OverlapPoint(canvasPosition);
 		}
+
+		#endregion
+
+		// ----------------------------------------------------------------------------------------------------
+
+		#region Other
+
+		protected void Discard(GameTouch touch)
+		{
+			if (!touch.IsHover)
+			{
+				discarded.Add(touch);
+			}
+		}
+
+		#endregion
 
 		#endregion
 

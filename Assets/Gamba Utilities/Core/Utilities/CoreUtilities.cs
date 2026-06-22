@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -254,15 +255,50 @@ namespace GambaUtilities
 		public static int GetEnumLength<E>() where E : Enum => GetEnumLength(typeof(E));
 
 		/// <summary> Gets the amount of values in <paramref name="enumType"/>. </summary>
-		public static int GetEnumLength(Type enumType) => Enum.GetValues(enumType).Length;
+		public static int GetEnumLength(Type enumType) => enumType.GetEnumValues().Length;
 
-		/// <summary> Indicates whether the <typeparamref name="E"/> is equal to any of these <paramref name="values"/>. </summary>
-		public static bool IsEither<E>(this E enumValue, params E[] values)
+		/// <summary> Checks whether the <typeparamref name="E"/> is equal to any of these values. </summary>
+		public static bool IsEither<E>(this E value, E value1, E value2)
 			where E : Enum
 		{
-			foreach (E value in values)
+			EqualityComparer<E> comparer = EqualityComparer<E>.Default;
+
+			return Equals(value1) || Equals(value2);
+
+			bool Equals(E target) => comparer.Equals(value, target);
+		}
+
+		/// <summary> Checks whether the <typeparamref name="E"/> is equal to any of these values. </summary>
+		public static bool IsEither<E>(this E value, E value1, E value2, E value3)
+			where E : Enum
+		{
+			EqualityComparer<E> comparer = EqualityComparer<E>.Default;
+
+			return Equals(value1) || Equals(value2) || Equals(value3);
+
+			bool Equals(E target) => comparer.Equals(value, target);
+		}
+
+		/// <summary> Checks whether the <typeparamref name="E"/> is equal to any of these values. </summary>
+		public static bool IsEither<E>(this E value, E value1, E value2, E value3, E value4)
+			where E : Enum
+		{
+			EqualityComparer<E> comparer = EqualityComparer<E>.Default;
+
+			return Equals(value1) || Equals(value2) || Equals(value3) || Equals(value4);
+
+			bool Equals(E target) => comparer.Equals(value, target);
+		}
+
+		/// <summary> Checks whether the <typeparamref name="E"/> is equal to any of these <paramref name="values"/>. </summary>
+		public static bool IsEither<E>(this E value, params E[] values)
+			where E : Enum
+		{
+			EqualityComparer<E> comparer = EqualityComparer<E>.Default;
+
+			foreach (E current in values)
 			{
-				if (enumValue.Equals(value))
+				if (comparer.Equals(value, current))
 				{
 					return true;
 				}
@@ -572,19 +608,16 @@ namespace GambaUtilities
 			action?.Invoke();
 			SetRecording(false);
 
-			void SetRecording(bool enabled)
+			void SetRecording(bool enabled) => CoreUtilities.SetRecording(enabled, target, description);
+		}
+
+		[Conditional("UNITY_EDITOR")]
+		private static void SetRecording(bool enabled, Object target, string description)
+		{
+			if (!Application.isPlaying)
 			{
-
-#if UNITY_EDITOR
-
-				if (!Application.isPlaying)
-				{
-					if (enabled) Undo.RecordObject(target, description);
-					else Undo.FlushUndoRecordObjects();
-				}
-
-#endif
-
+				if (enabled) Undo.RecordObject(target, description);
+				else Undo.FlushUndoRecordObjects();
 			}
 		}
 

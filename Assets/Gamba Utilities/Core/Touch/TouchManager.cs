@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GambaUtilities
@@ -57,6 +57,8 @@ namespace GambaUtilities
 			this.screenPosition = screenPosition;
 			this.deltaPosition = deltaPosition;
 		}
+
+		public static implicit operator sbyte(GameTouch touch) => (sbyte)touch.id;
 
 		public static implicit operator int(GameTouch touch) => touch.id;
 
@@ -176,6 +178,16 @@ namespace GambaUtilities
 
 				if (state == TouchState.Press) initial.Add(receiver);
 			}
+
+			public void Remove(TouchReceiver receiver)
+			{
+				if (history.Contains(receiver))
+				{
+					history.Remove(receiver);
+					hovered.Remove(receiver);
+					initial.Remove(receiver);
+				}
+			}
 		}
 
 		#endregion
@@ -200,11 +212,13 @@ namespace GambaUtilities
 
 			private Vector2 lastMousePosition;
 
+			public static int MaxTouches => Input.touchSupported ? Instance.maxTouches : Input.mousePresent ? 1 : 0;
+
 			#region Init
 
 			protected override void Init()
 			{
-				int maxTouches = Input.touchSupported ? this.maxTouches : Input.mousePresent ? 1 : 0;
+				int maxTouches = MaxTouches;
 				int maxReceivers = FindObjectsOfType<TouchReceiver>(true).Length;
 
 				touches.Capacity = maxTouches;
@@ -398,10 +412,16 @@ namespace GambaUtilities
 
 					foreach (TouchReceiver receiver in receivers)
 					{
-						if (receiver.Validate(touch) && receiver.Overlap(touch.screenPosition))
+						receiver.PreValidate(touch);
+
+						if (receiver.Validate(touch))
 						{
-							activity.Record(receiver, touch.state);
+							if (receiver.Overlap(touch.screenPosition))
+							{
+								activity.Record(receiver, touch.state);
+							}
 						}
+						else activity.Remove(receiver);
 					}
 				}
 			}
@@ -431,6 +451,7 @@ namespace GambaUtilities
 
 				if (touch.state <= TouchState.Press) ProcessHoverInteraction(isCurrent, receiver, history, hovered, ref touch.state);
 
+				receiver.PreReceiveTouch(touch);
 				receiver.ReceiveTouch(touch, isInitial, isCurrent);
 			}
 

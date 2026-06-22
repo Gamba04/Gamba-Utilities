@@ -70,11 +70,11 @@ namespace GambaUtilities
 
 		#region Start
 
-		public void Start(T target, Action onTransitionEnd = null) => Start(target, default, default, onTransitionEnd);
+		public bool Start(T target, Action onTransitionEnd = null) => Start(target, default, default, onTransitionEnd);
 
-		public void Start(T target, bool isUnscaled, Action onTransitionEnd = null) => Start(target, isUnscaled, default, onTransitionEnd);
+		public bool Start(T target, bool isUnscaled, Action onTransitionEnd = null) => Start(target, isUnscaled, default, onTransitionEnd);
 
-		public void Start(T target, bool isUnscaled, bool isReversed, Action onTransitionEnd = null)
+		public bool Start(T target, bool isUnscaled, bool isReversed, Action onTransitionEnd = null)
 		{
 			this.isUnscaled = isUnscaled;
 			this.isReversed = isReversed;
@@ -84,11 +84,12 @@ namespace GambaUtilities
 			targetValue = target;
 			isInTransition = true;
 
-			if (duration > 0 && !value.Equals(target))
-			{
-				time = 1;
-			}
-			else Complete();
+			bool instant = duration == 0 || value.Equals(target);
+
+			if (instant) Complete();
+			else time = 1;
+
+			return instant;
 		}
 
 		#endregion
@@ -115,11 +116,11 @@ namespace GambaUtilities
 				{
 					time -= DeltaTime / duration;
 
-					if (time <= 0) Stop(false);
-
 					float interpolator = curve.Evaluate(Progress);
 
 					updateValue = Lerp(interpolator);
+
+					if (time <= 0) Stop(false);
 				}
 				else Complete(false);
 			}
