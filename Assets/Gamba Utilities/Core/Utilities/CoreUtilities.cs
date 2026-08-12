@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -291,6 +290,7 @@ namespace GambaUtilities
 		}
 
 		/// <summary> Checks whether the <typeparamref name="E"/> is equal to any of these <paramref name="values"/>. </summary>
+		/// <remarks> This overload allocates some garbage since it uses <see langword="params"/>. </remarks>
 		public static bool IsEither<E>(this E value, params E[] values)
 			where E : Enum
 		{
@@ -608,16 +608,19 @@ namespace GambaUtilities
 			action?.Invoke();
 			SetRecording(false);
 
-			void SetRecording(bool enabled) => CoreUtilities.SetRecording(enabled, target, description);
-		}
-
-		[Conditional("UNITY_EDITOR")]
-		private static void SetRecording(bool enabled, Object target, string description)
-		{
-			if (!Application.isPlaying)
+			void SetRecording(bool enabled)
 			{
-				if (enabled) Undo.RecordObject(target, description);
-				else Undo.FlushUndoRecordObjects();
+
+#if UNITY_EDITOR
+
+				if (!Application.isPlaying)
+				{
+					if (enabled) Undo.RecordObject(target, description);
+					else Undo.FlushUndoRecordObjects();
+				}
+
+#endif
+
 			}
 		}
 
