@@ -11,49 +11,12 @@ namespace GambaUtilities
 	public class VSync : SingletonBehaviour<VSync>
 	{
 
-		#region Settings
+		#region Target Data
 
-		public abstract class Settings
+		#region Structures
+
+		public struct Values
 		{
-
-			#region Adaptive VSync
-
-			[Serializable]
-			public struct AdaptiveVSync : ISerializationCallbackReceiver
-			{
-				[SerializeField, HideInInspector]
-				private bool initialized;
-
-				[Tooltip("The initial VSync state before sampling the first framerate average")]
-				public bool initialState;
-				[Tooltip("The delay between samples of the average framerate")]
-				[Range(0.1f, 2)]
-				public float delay;
-				[Tooltip("Percentage of the refresh rate where VSync becomes enabled\n\nWhen VSync is enabled, the framerate drops down to the screen's refresh rate. However, even if the device can sustain framerates well above that, the reported framerate will always have some fluctuations which prevent it from matching the refresh rate value exactly. This threshold acts as a small margin of error in order to detect VSync eligibility reliably\n\nRecommended: 99%")]
-				[Range(90, 99.9f)]
-				public float threshold;
-
-				#region ISerializationCallbackReceiver
-
-				void ISerializationCallbackReceiver.OnBeforeSerialize() { }
-
-				void ISerializationCallbackReceiver.OnAfterDeserialize()
-				{
-					if (!initialized)
-					{
-						initialized = true;
-
-						delay = 1;
-						threshold = 99;
-					}
-				}
-
-				#endregion
-
-			}
-
-			#endregion
-
 			public enum Target
 			{
 				RefreshRate,
@@ -75,6 +38,108 @@ namespace GambaUtilities
 				Adaptive
 			}
 
+			public Target target;
+			public int framerate;
+			public VSync? vSync;
+			public AdaptiveVSync? adaptiveVSync;
+
+			#region Values
+
+			public Values(LimitedTarget target, int framerate) : this((Target)target, framerate, null, null) { }
+
+			public Values(LimitedTarget target, int framerate, VSync? vSync, AdaptiveVSync? adaptiveVSync) : this((Target)target, framerate, vSync, adaptiveVSync) { }
+
+			public Values(Target target, int framerate) : this(target, framerate, null, null) { }
+
+			public Values(Target target, int framerate, VSync? vSync, AdaptiveVSync? adaptiveVSync)
+			{
+				this.target = target;
+				this.framerate = framerate;
+				this.vSync = vSync;
+				this.adaptiveVSync = adaptiveVSync;
+			}
+
+			#endregion
+
+			// ----------------------------------------------------------------------------------------------------
+
+			#region Set
+
+			public void Set(ref Target target, ref int framerate)
+			{
+				target = this.target;
+				framerate = this.framerate;
+			}
+
+			public void Set(ref Target target, ref int framerate, ref VSync vSync, ref AdaptiveVSync adaptiveVSync)
+			{
+				target = this.target;
+				framerate = this.framerate;
+				vSync = this.vSync ?? vSync;
+				adaptiveVSync = this.adaptiveVSync ?? adaptiveVSync;
+			}
+
+			public void Set(ref LimitedTarget target, ref int framerate)
+			{
+				target = (LimitedTarget)this.target;
+				framerate = this.framerate;
+			}
+
+			public void Set(ref LimitedTarget target, ref int framerate, ref VSync vSync, ref AdaptiveVSync adaptiveVSync)
+			{
+				target = (LimitedTarget)this.target;
+				framerate = this.framerate;
+				vSync = this.vSync ?? vSync;
+				adaptiveVSync = this.adaptiveVSync ?? adaptiveVSync;
+			}
+
+			#endregion
+
+		}
+
+		[Serializable]
+		public struct AdaptiveVSync : ISerializationCallbackReceiver
+		{
+			[SerializeField, HideInInspector]
+			private bool initialized;
+
+			[Tooltip("The initial VSync state before sampling the first framerate average")]
+			public bool initialState;
+			[Tooltip("The delay between samples of the average framerate")]
+			[Range(0.1f, 2)]
+			public float delay;
+			[Tooltip("Percentage of the refresh rate where VSync becomes enabled\n\nWhen VSync is enabled, the framerate drops down to the screen's refresh rate. However, even if the device can sustain framerates well above that, the reported framerate will always have some fluctuations which prevent it from matching the refresh rate value exactly. This threshold acts as a small margin of error in order to detect VSync eligibility reliably\n\nRecommended: 99%")]
+			[Range(90, 99.9f)]
+			public float threshold;
+
+			#region ISerializationCallbackReceiver
+
+			void ISerializationCallbackReceiver.OnBeforeSerialize() { }
+
+			void ISerializationCallbackReceiver.OnAfterDeserialize()
+			{
+				if (!initialized)
+				{
+					initialized = true;
+
+					delay = 1;
+					threshold = 99;
+				}
+			}
+
+			#endregion
+
+		}
+
+		#endregion
+
+		// ----------------------------------------------------------------------------------------------------
+
+		#region Settings
+
+		private abstract class Settings
+		{
+
 			#region Values
 
 			public virtual bool UnlimitedSupported => false;
@@ -83,13 +148,9 @@ namespace GambaUtilities
 
 			public virtual bool AdaptiveVSyncEnabled => false;
 
-			public abstract Target TargetValue { get; set; }
+			public abstract Values GetValues();
 
-			public abstract int FramerateValue { get; set; }
-
-			public virtual VSync? VSyncValue { get => null; set { } }
-
-			public virtual AdaptiveVSync? AdaptiveVSyncValue { get => null; set { } }
+			public abstract void SetValues(Values values);
 
 			#endregion
 
@@ -107,38 +168,38 @@ namespace GambaUtilities
 
 			#region Utilities
 
-			protected LimitedTarget? GetLimitedTarget(Target target) => target < Target.Unlimited ? (LimitedTarget?)(int)target : null;
+			protected Values.LimitedTarget? GetLimitedTarget(Values.Target target) => target < Values.Target.Unlimited ? (Values.LimitedTarget?)(int)target : null;
 
-			protected void ApplyTarget(Target target, int framerate)
+			protected void ApplyTarget(Values.Target target, int framerate)
 			{
 				Application.targetFrameRate = target switch
 				{
-					Target.RefreshRate => RefreshRate,
-					Target.Framerate => framerate,
-					Target.Unlimited => -1,
+					Values.Target.RefreshRate => RefreshRate,
+					Values.Target.Framerate => framerate,
+					Values.Target.Unlimited => -1,
 					_ => throw new InvalidCastException()
 				};
 			}
 
-			protected void ApplyTarget(LimitedTarget target, int framerate, int refreshRate)
+			protected void ApplyTarget(Values.LimitedTarget target, int framerate, int refreshRate)
 			{
 				Application.targetFrameRate = target switch
 				{
-					LimitedTarget.RefreshRate => refreshRate,
-					LimitedTarget.Framerate => framerate,
+					Values.LimitedTarget.RefreshRate => refreshRate,
+					Values.LimitedTarget.Framerate => framerate,
 					_ => throw new InvalidCastException()
 				};
 			}
 
-			protected void ApplyVSync(Target target, VSync vSync)
+			protected void ApplyVSync(Values.Target target, Values.VSync vSync)
 			{
-				if (target == Target.RefreshRate && vSync != VSync.Adaptive)
+				if (target == Values.Target.RefreshRate && vSync != Values.VSync.Adaptive)
 				{
-					QualitySettings.vSyncCount = vSync == VSync.Enabled ? 1 : 0;
+					QualitySettings.vSyncCount = vSync == Values.VSync.Enabled ? 1 : 0;
 				}
 			}
 
-			protected void ApplyVSync(LimitedTarget target, VSync vSync) => ApplyVSync((Target)target, vSync);
+			protected void ApplyVSync(Values.LimitedTarget target, Values.VSync vSync) => ApplyVSync((Values.Target)target, vSync);
 
 			protected void ClampFramerate(ref int framerate, int max = 1000) => framerate = Mathf.Clamp(framerate, 1, max);
 
@@ -158,7 +219,7 @@ namespace GambaUtilities
 		private class EditorSettings : Settings
 		{
 			[SerializeField]
-			private Target target;
+			private Values.Target target;
 			[SerializeField]
 			private int framerate = 144;
 
@@ -166,9 +227,9 @@ namespace GambaUtilities
 
 			public override bool UnlimitedSupported => true;
 
-			public override Target TargetValue { get => target; set => target = value; }
+			public override Values GetValues() => new Values(target, framerate);
 
-			public override int FramerateValue { get => framerate; set => framerate = value; }
+			public override void SetValues(Values values) => values.Set(ref target, ref framerate);
 
 			#endregion
 
@@ -188,9 +249,9 @@ namespace GambaUtilities
 		private class DesktopSettings : Settings
 		{
 			[SerializeField]
-			private Target target;
+			private Values.Target target;
 			[SerializeField]
-			private VSync vSync;
+			private Values.VSync vSync;
 			[SerializeField]
 			private int framerate = 144;
 			[SerializeField]
@@ -202,15 +263,11 @@ namespace GambaUtilities
 
 			public override bool VSyncSupported => true;
 
-			public override bool AdaptiveVSyncEnabled => target == Target.RefreshRate && vSync == VSync.Adaptive;
+			public override bool AdaptiveVSyncEnabled => target == Values.Target.RefreshRate && vSync == Values.VSync.Adaptive;
 
-			public override Target TargetValue { get => target; set => target = value; }
+			public override Values GetValues() => new Values(target, framerate, vSync, adaptiveVSync);
 
-			public override VSync? VSyncValue { get => vSync; set => vSync = value.Value; }
-
-			public override int FramerateValue { get => framerate; set => framerate = value; }
-
-			public override AdaptiveVSync? AdaptiveVSyncValue { get => adaptiveVSync; set => adaptiveVSync = value.Value; }
+			public override void SetValues(Values values) => values.Set(ref target, ref framerate, ref vSync, ref adaptiveVSync);
 
 			#endregion
 
@@ -234,9 +291,9 @@ namespace GambaUtilities
 		private class WebSettings : Settings
 		{
 			[SerializeField]
-			private LimitedTarget target;
+			private Values.LimitedTarget target;
 			[SerializeField]
-			private VSync vSync;
+			private Values.VSync vSync;
 			[SerializeField]
 			private int framerate = 144;
 			[SerializeField]
@@ -246,15 +303,11 @@ namespace GambaUtilities
 
 			public override bool VSyncSupported => true;
 
-			public override bool AdaptiveVSyncEnabled => target == LimitedTarget.RefreshRate && vSync == VSync.Adaptive;
+			public override bool AdaptiveVSyncEnabled => target == Values.LimitedTarget.RefreshRate && vSync == Values.VSync.Adaptive;
 
-			public override Target TargetValue { get => (Target)target; set => target = (LimitedTarget)value; }
+			public override Values GetValues() => new Values(target, framerate, vSync, adaptiveVSync);
 
-			public override VSync? VSyncValue { get => vSync; set => vSync = value.Value; }
-
-			public override int FramerateValue { get => framerate; set => framerate = value; }
-
-			public override AdaptiveVSync? AdaptiveVSyncValue { get => adaptiveVSync; set => adaptiveVSync = value.Value; }
+			public override void SetValues(Values values) => values.Set(ref target, ref framerate, ref vSync, ref adaptiveVSync);
 
 			#endregion
 
@@ -278,15 +331,15 @@ namespace GambaUtilities
 		private class MobileSettings : Settings
 		{
 			[SerializeField]
-			private LimitedTarget target;
+			private Values.LimitedTarget target;
 			[SerializeField]
 			private int framerate = 120;
 
 			#region Values
 
-			public override Target TargetValue { get => (Target)target; set => target = (LimitedTarget)value; }
+			public override Values GetValues() => new Values(target, framerate);
 
-			public override int FramerateValue { get => framerate; set => framerate = value; }
+			public override void SetValues(Values values) => values.Set(ref target, ref framerate);
 
 			#endregion
 
@@ -304,7 +357,9 @@ namespace GambaUtilities
 
 		#endregion
 
-		public enum Platform
+		#endregion
+
+		private enum Platform
 		{
 			Editor,
 			Desktop,
@@ -326,9 +381,13 @@ namespace GambaUtilities
 
 		private Settings settings;
 
-		public static int RefreshRate => Screen.currentResolution.refreshRate;
+		private static int RefreshRate => Screen.currentResolution.refreshRate;
 
-		public static Settings RuntimeSettings => Instance.settings;
+		public static bool PlatformSupported => Instance.settings;
+
+		public static bool UnlimitedSupported => Instance.settings?.UnlimitedSupported ?? false;
+
+		public static bool VSyncSupported => Instance.settings?.VSyncSupported ?? false;
 
 		#region Init
 
@@ -338,9 +397,9 @@ namespace GambaUtilities
 			{
 				settings.Apply();
 
-				if (settings.AdaptiveVSyncValue is Settings.AdaptiveVSync adaptiveVSync)
+				if (settings.GetValues().adaptiveVSync is AdaptiveVSync adaptiveVSync)
 				{
-					StartCoroutine(AdaptiveVSync(adaptiveVSync));
+					StartCoroutine(AdaptiveVSyncUpdate(adaptiveVSync));
 				}
 			}
 		}
@@ -359,13 +418,99 @@ namespace GambaUtilities
 
 		// ----------------------------------------------------------------------------------------------------
 
+		#region Target
+
+		/// <summary> Retrieves the current set of <see cref="Values"/> applied. </summary>
+		/// <returns> True if the platform is supported. </returns>
+		public static bool GetTargetValues(out Values values)
+		{
+			Settings settings = Instance.settings;
+
+			values = settings?.GetValues() ?? default;
+
+			return settings;
+		}
+
+		/// <summary> Sets a new set of <see cref="Values"/> and applies it. </summary>
+		/// <returns> True if the platform is supported. </returns>
+		public static bool SetTargetValues(Values values)
+		{
+			Settings settings = Instance.settings;
+
+			settings?.SetValues(values);
+			settings?.Apply();
+
+			return settings;
+		}
+
+		/// <summary> Sets the target framerate to match the screen's refresh rate. </summary>
+		/// <returns> True if the platform is supported. </returns>
+		public static bool SetTargetRefreshRate() => SetTargetRefreshRate(Values.VSync.Disabled, null);
+
+		/// <summary> Sets the target framerate to match the screen's refresh rate and attempts to set the specified <see cref="Values.VSync"/> if the platform supports it. </summary>
+		/// <returns> True if the platform is supported and the attempted <see cref="Values.VSync"/> is supported. </returns>
+		public static bool SetTargetRefreshRate(Values.VSync vSync) => SetTargetRefreshRate(vSync, null);
+
+		/// <summary> Sets the target framerate to match the screen's refresh rate and attempts to set the specified <see cref="Values.VSync"/> if the platform supports it. </summary>
+		/// <param name="adaptiveVSync"> Custom settings for adaptive VSync. Pass <see cref="Values.VSync.Adaptive"/> as the argument for <paramref name="vSync"/> to enable adaptive VSync. </param>
+		/// <returns> True if the platform is supported and the attempted <see cref="Values.VSync"/> is supported. </returns>
+		public static bool SetTargetRefreshRate(Values.VSync vSync, AdaptiveVSync adaptiveVSync) => SetTargetRefreshRate(vSync, (AdaptiveVSync?)adaptiveVSync);
+
+		private static bool SetTargetRefreshRate(Values.VSync vSync, AdaptiveVSync? adaptiveVSync)
+		{
+			bool vSyncSuccess = VSyncSupported || vSync == Values.VSync.Disabled;
+
+			if (GetTargetValues(out Values values))
+			{
+				values.target = Values.Target.RefreshRate;
+				values.vSync = vSync;
+				values.adaptiveVSync = adaptiveVSync;
+			}
+
+			return SetTargetValues(values) && vSyncSuccess;
+		}
+
+		/// <summary> Sets the target framerate to match the specified <paramref name="framerate"/>. </summary>
+		/// <returns> True if the platform is supported. </returns>
+		public static bool SetTargetFramerate(int framerate)
+		{
+			if (GetTargetValues(out Values values))
+			{
+				values.target = Values.Target.Framerate;
+				values.framerate = framerate;
+			}
+
+			return SetTargetValues(values);
+		}
+
+		/// <summary> Sets the target framerate to be unlimited if the platform supports it. </summary>
+		/// <returns> True if the platform is supported and ultimited framerate is supported. </returns>
+		public static bool SetTargetUnlimited()
+		{
+			if (UnlimitedSupported)
+			{
+				if (GetTargetValues(out Values values))
+				{
+					values.target = Values.Target.Unlimited;
+				}
+
+				return SetTargetValues(values);
+			}
+
+			return false;
+		}
+
+		#endregion
+
+		// ----------------------------------------------------------------------------------------------------
+
 		#region Adaptive VSync
 
-		private IEnumerator AdaptiveVSync(Settings.AdaptiveVSync adaptiveVSync)
+		private IEnumerator AdaptiveVSyncUpdate(AdaptiveVSync adaptiveVSync)
 		{
 			QualitySettings.vSyncCount = adaptiveVSync.initialState ? 1 : 0;
 
-			yield return InitDelay();
+			yield return WaitForFrames(3);
 
 			WaitForSecondsRealtime delay = new WaitForSecondsRealtime(adaptiveVSync.delay);
 
@@ -389,9 +534,9 @@ namespace GambaUtilities
 			}
 		}
 
-		private IEnumerator InitDelay()
+		private static IEnumerator WaitForFrames(int frames)
 		{
-			for (int f = 0; f < 3; f++) yield return null;
+			for (int f = 0; f < frames; f++) yield return null;
 		}
 
 		#endregion
@@ -483,59 +628,59 @@ namespace GambaUtilities
 					_ => throw new InvalidCastException()
 				};
 
-				DrawTarget(settings, out Settings.Target target);
+				DrawTarget(settings, out Values.Target target);
 				DrawFramerate(settings, target);
 				DrawVSync(settings, target);
 			}
 
-			private void DrawTarget(SerializedProperty settings, out Settings.Target value)
+			private void DrawTarget(SerializedProperty settings, out Values.Target value)
 			{
-				SerializedProperty target = settings.FindPropertyRelative("target");
+				SerializedProperty target = settings.FindPropertyRelative(nameof(Values.target));
 
 				EditorGUILayout.PropertyField(target);
 
-				value = (Settings.Target)target.intValue;
+				value = (Values.Target)target.intValue;
 			}
 
-			private void DrawFramerate(SerializedProperty settings, Settings.Target target)
+			private void DrawFramerate(SerializedProperty settings, Values.Target target)
 			{
-				if (target == Settings.Target.Framerate)
+				if (target == Values.Target.Framerate)
 				{
-					SerializedProperty framerate = settings.FindPropertyRelative("framerate");
+					SerializedProperty framerate = settings.FindPropertyRelative(nameof(Values.framerate));
 
 					GUI.SetNextControlName("Framerate");
 					EditorGUILayout.PropertyField(framerate);
 				}
 			}
 
-			private void DrawVSync(SerializedProperty settings, Settings.Target target)
+			private void DrawVSync(SerializedProperty settings, Values.Target target)
 			{
-				if (target == Settings.Target.RefreshRate)
+				if (target == Values.Target.RefreshRate)
 				{
-					SerializedProperty vSync = settings.FindPropertyRelative("vSync");
+					SerializedProperty vSync = settings.FindPropertyRelative(nameof(Values.vSync));
 
 					if (vSync != null)
 					{
 						EditorGUILayout.PropertyField(vSync, new GUIContent("VSync"));
 
-						Settings.VSync value = (Settings.VSync)vSync.intValue;
+						Values.VSync value = (Values.VSync)vSync.intValue;
 
 						DrawAdaptiveVSync(settings, value);
 					}
 				}
 			}
 
-			private void DrawAdaptiveVSync(SerializedProperty settings, Settings.VSync vSync)
+			private void DrawAdaptiveVSync(SerializedProperty settings, Values.VSync vSync)
 			{
-				if (vSync == Settings.VSync.Adaptive)
+				if (vSync == Values.VSync.Adaptive)
 				{
 					if (DrawButton())
 					{
-						SerializedProperty adaptiveVSync = settings.FindPropertyRelative("adaptiveVSync");
+						SerializedProperty adaptiveVSync = settings.FindPropertyRelative(nameof(Values.adaptiveVSync));
 
-						DrawProperty(nameof(Settings.AdaptiveVSync.initialState));
-						DrawProperty(nameof(Settings.AdaptiveVSync.delay), "Delay");
-						DrawProperty(nameof(Settings.AdaptiveVSync.threshold), "Threshold", " (%)");
+						DrawProperty(nameof(AdaptiveVSync.initialState));
+						DrawProperty(nameof(AdaptiveVSync.delay), "Delay", " (s)");
+						DrawProperty(nameof(AdaptiveVSync.threshold), "Threshold", " (%)");
 
 						void DrawProperty(string name, string controlName = null, string suffix = null)
 						{
