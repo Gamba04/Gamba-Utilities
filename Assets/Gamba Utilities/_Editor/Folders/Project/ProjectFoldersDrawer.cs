@@ -5,8 +5,6 @@ using UnityEditor;
 
 #if UNITY_EDITOR
 
-using UnityEditorInternal;
-
 namespace GambaUtilities.Editor.Folders
 {
 	[InitializeOnLoad]
@@ -60,19 +58,41 @@ namespace GambaUtilities.Editor.Folders
 
 		static ProjectFoldersDrawer()
 		{
-			EditorApplication.projectWindowItemOnGUI -= OnProjectWindowItemGUI;
-			EditorApplication.projectWindowItemOnGUI += OnProjectWindowItemGUI;
-
-			EditorApplication.delayCall += () =>
-			{
-				EditorUtilities.FindAssetOfType<ProjectFoldersDrawer>();
-				InternalEditorUtility.RepaintAllViews();
-			};
+			EditorApplication.update += Load;
+			EditorApplication.projectWindowItemOnGUI += OnGUI;
 		}
 
-		private static void OnProjectWindowItemGUI(string guid, Rect area) => onProcessItem?.Invoke(guid, area);
+		private static void Load()
+		{
+			EditorUtilities.FindAssetOfType<ProjectFoldersDrawer>();
+			EditorApplication.update -= Load;
+		}
 
 		private void Hook() => onProcessItem = ProcessItem;
+
+		private static void OnGUI(string guid, Rect area) => onProcessItem?.Invoke(guid, area);
+
+		#endregion
+
+		// ----------------------------------------------------------------------------------------------------
+
+		#region Inspector
+
+		private void OnValidate()
+		{
+			Hook();
+			EditorUpdate();
+
+			EditorApplication.RepaintProjectWindow();
+		}
+
+		private void EditorUpdate()
+		{
+			foreach (Folder folder in folders)
+			{
+				folder.EditorUpdate();
+			}
+		}
 
 		#endregion
 
@@ -117,19 +137,6 @@ namespace GambaUtilities.Editor.Folders
 			int index = path.LastIndexOf(separator);
 
 			path = path.Remove(index);
-		}
-
-		#endregion
-
-		// ----------------------------------------------------------------------------------------------------
-
-		#region Inspector
-
-		private void OnValidate()
-		{
-			Hook();
-
-			folders.ForEach(folder => folder.EditorUpdate());
 		}
 
 		#endregion
